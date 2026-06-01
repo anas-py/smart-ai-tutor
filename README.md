@@ -14,7 +14,7 @@
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-RAG-teal?style=flat-square)](https://trychroma.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-> **M.Sc. AI & ML Major Project** — Mohd Anas (24MAM023) · Dept. of Computer Science · Jamia Millia Islamia
+> **M.Sc. AI & ML Major Project** — Mohd Anas · Dept. of Computer Science · Jamia Millia Islamia
 
 </div>
 
@@ -498,7 +498,7 @@ This project was developed as a **Major Project** for:
 - **Department:** Computer Science, Faculty of Sciences
 - **Institution:** Jamia Millia Islamia (A Central University), New Delhi – 110025
 - **Supervisor:** Prof. Jahiruddin
-- **Student:** Mohd Anas — Roll No: 24MAM023 — Enrollment: 24-05264
+- **Student:** Mohd Anas
 - **Session:** 2025–2026
 
 **Key academic contributions:**
