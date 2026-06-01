@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Study Plans — NeuroTutor{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div class="page-hdr-row">
+    <div><h1>🗺 Study Plans</h1><p class="text-muted">AI-generated personalized learning roadmaps</p></div>
+    <button class="btn btn-primary" onclick="document.getElementById('createModal').classList.remove('hidden')">+ New Plan</button>
+  </div>
+</div>
+{% if plans %}
+<div class="grid cols-auto">
+  {% for plan in plans %}
+  {% set pd = plan.plan_data|from_json %}
+  <div class="card" style="cursor:pointer" onclick="viewPlan({{ plan.id }})">
+    <div class="flex items-center justify-between mb-3">
+      <span class="badge badge-indigo">{{ plan.subject }}</span>
+      <span class="text-xs text-dim">{{ plan.created_at.strftime('%d %b %Y') }}</span>
+    </div>
+    <h3 style="font-family:'Clash Display',sans-serif;font-size:17px;margin-bottom:6px">{{ plan.title }}</h3>
+    <p class="text-sm text-muted mb-3">{{ pd.overview[:100] if pd.overview else plan.goal[:100] if plan.goal else 'AI-generated study plan' }}…</p>
+    <div class="progress-track mb-2"><div class="progress-fill prog-indigo" style="width:{{ plan.progress }}%"></div></div>
+    <div class="flex justify-between text-xs text-dim">
+      <span>{{ plan.progress|round|int }}% complete</span>
+      {% if plan.deadline %}<span>Due {{ plan.deadline.strftime('%d %b') }}</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:80px;color:var(--txt3)">
+  <div style="font-size:60px;margin-bottom:20px">🗺</div>
+  <h2 style="font-family:'Clash Display',sans-serif;margin-bottom:12px">No Study Plans Yet</h2>
+  <p style="margin-bottom:24px">Let AI create a personalized roadmap to reach your learning goals</p>
+  <button class="btn btn-primary btn-lg" onclick="document.getElementById('createModal').classList.remove('hidden')">✨ Create Your First Plan</button>
+</div>
+{% endif %}
+
+<!-- Create Modal -->
+<div id="createModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('createModal').classList.add('hidden')">×</button>
+    <h3 style="font-family:'Clash Display',sans-serif;font-size:22px;margin-bottom:20px">🗺 Create Study Plan</h3>
+    <div class="form-group"><label class="form-label">Subject</label>
+      <select class="form-select" id="spSubj"><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>Computer Science</option><option>History</option><option>Economics</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Your Goal</label>
+      <input type="text" class="form-input" id="spGoal" placeholder="e.g. Pass my final exam with 85%+, Master calculus…">
+    </div>
+    <div class="grid cols-2">
+      <div class="form-group"><label class="form-label">Deadline</label><input type="date" class="form-input" id="spDead"></div>
+      <div class="form-group"><label class="form-label">Hours / Day</label>
+        <select class="form-select" id="spHrs"><option value="1">1 hour</option><option value="2" selected>2 hours</option><option value="3">3 hours</option><option value="4">4+ hours</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Current Level</label>
+      <select class="form-select" id="spLvl"><option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="advanced">Advanced</option></select>
+    </div>
+    <button class="btn btn-primary btn-full" id="createBtn" onclick="createPlan()">✨ Generate AI Study Plan</button>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div id="viewModal" class="modal-overlay hidden">
+  <div class="modal-box wide" style="max-height:85vh;overflow-y:auto">
+    <button class="modal-close" onclick="document.getElementById('viewModal').classList.add('hidden')">×</button>
+    <div id="planContent"></div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function createPlan(){
+  const btn=document.getElementById('createBtn');
+  btn.disabled=true;btn.textContent='⏳ AI generating plan…';
+  try{
+    const d=await API.post('/api/study-plan/generate',{
+      subject:document.getElementById('spSubj').value,
+      goal:document.getElementById('spGoal').value,
+      deadline:document.getElementById('spDead').value,
+      hours_per_day:document.getElementById('spHrs').value,
+      current_level:document.getElementById('spLvl').value,
+    });
+    Toast.success('Study plan created!');
+    setTimeout(()=>location.reload(),1200);
+  }catch(e){Toast.error(e.message);}
+  btn.disabled=false;btn.textContent='✨ Generate AI Study Plan';
+}
+async function viewPlan(id){
+  const d=await API.get(`/api/study-plan/${id}`);
+  const weeks=(d.weeks||[]).slice(0,2).map(w=>`
+    <div style="margin-bottom:16px">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:600;margin-bottom:8px">Week ${w.week}: ${w.theme}</div>
+      ${(w.objectives||[]).map(o=>`<div class="text-sm text-muted" style="padding:4px 0">• ${o}</div>`).join('')}
+    </div>`).join('');
+  const tips=(d.study_tips||[]).map(t=>`<div style="padding:6px 0;font-size:13px;color:var(--txt2)">💡 ${t}</div>`).join('');
+  document.getElementById('planContent').innerHTML=`
+    <h2 style="font-family:'Clash Display',sans-serif;font-size:22px;margin-bottom:8px">${d.title||'Study Plan'}</h2>
+    <span class="badge badge-indigo">${d.subject}</span>
+    <p style="margin:14px 0;color:var(--txt2);font-size:14px">${d.overview||d.goal||''}</p>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+    <h3 style="font-family:'Clash Display',sans-serif;font-size:16px;margin-bottom:12px">📅 Weekly Plan</h3>
+    ${weeks}
+    <h3 style="font-family:'Clash Display',sans-serif;font-size:16px;margin:16px 0 10px">💡 Study Tips</h3>
+    ${tips}`;
+  document.getElementById('viewModal').classList.remove('hidden');
+}
+</script>
+{% endblock %}

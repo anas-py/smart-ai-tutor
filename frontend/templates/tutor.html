@@ -1,0 +1,777 @@
+{% extends "base.html" %}
+{% block title %}AI Tutor — Smart AI Tutor{% endblock %}
+
+{% block content %}
+<style>
+/* ── TUTOR PAGE LAYOUT ── */
+.tutor-wrap {
+  display: flex;
+  height: calc(100vh - 48px);
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Left: chat area */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Right: session info panel */
+.session-panel {
+  width: 260px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border, rgba(255,255,255,.08));
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  padding: 20px 16px;
+  background: var(--ink2, #0a0d1a);
+}
+[data-theme="light"] .session-panel {
+  background: #fafafa;
+  border-left-color: rgba(0,0,0,.08);
+}
+
+/* Chat header */
+.chat-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,.08));
+  flex-shrink: 0;
+}
+[data-theme="light"] .chat-header { border-bottom-color: rgba(0,0,0,.08); }
+
+.chat-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--txt, #e2e8f0);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+[data-theme="light"] .chat-title { color: #0f0a2e; }
+.chat-title span { color: #4f46e5; }
+
+.chat-subtitle {
+  font-size: 13px;
+  color: var(--txt2, #94a3b8);
+}
+
+/* Mode buttons */
+.mode-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,.08));
+  flex-shrink: 0;
+}
+[data-theme="light"] .mode-bar { border-bottom-color: rgba(0,0,0,.08); }
+
+.mode-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--border, rgba(255,255,255,.1));
+  background: transparent;
+  color: var(--txt2, #94a3b8);
+  font-family: 'Instrument Sans', sans-serif;
+  transition: all .2s;
+}
+.mode-btn:hover { border-color: #4f46e5; color: #818cf8; }
+.mode-btn.active {
+  background: rgba(79,70,229,.15);
+  border-color: #4f46e5;
+  color: #a5b4fc;
+}
+[data-theme="light"] .mode-btn.active {
+  background: rgba(79,70,229,.1);
+  color: #4f46e5;
+  border-color: #4f46e5;
+}
+
+/* XP bar under modes */
+.xp-bar-mini {
+  padding: 6px 20px;
+  font-size: 12px;
+  color: var(--txt3, #475569);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,.06));
+}
+[data-theme="light"] .xp-bar-mini {
+  border-bottom-color: rgba(0,0,0,.06);
+  color: #6b7280;
+}
+
+/* Messages area */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Welcome message */
+.welcome-msg {
+  background: var(--card-bg, rgba(255,255,255,.03));
+  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border-radius: 16px;
+  padding: 20px 22px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--txt, #e2e8f0);
+}
+[data-theme="light"] .welcome-msg {
+  background: #f8f9ff;
+  border-color: rgba(79,70,229,.12);
+  color: #111827;
+}
+.welcome-msg strong { color: #4f46e5; }
+
+/* Chat bubbles */
+.msg-user {
+  display: flex;
+  justify-content: flex-end;
+}
+.msg-user .bubble {
+  background: linear-gradient(135deg,#4f46e5,#6d28d9);
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+  padding: 12px 16px;
+  max-width: 75%;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.msg-ai {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.msg-ai .avatar {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: rgba(79,70,229,.15);
+  border: 1px solid rgba(79,70,229,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.msg-ai .bubble {
+  background: var(--card-bg, rgba(255,255,255,.03));
+  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border-radius: 4px 16px 16px 16px;
+  padding: 14px 16px;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--txt, #e2e8f0);
+}
+[data-theme="light"] .msg-ai .bubble {
+  background: #f8f9ff;
+  border-color: rgba(79,70,229,.12);
+  color: #111827;
+}
+.msg-ai .bubble h1,
+.msg-ai .bubble h2,
+.msg-ai .bubble h3 {
+  font-family: 'Clash Display', sans-serif;
+  margin: 12px 0 6px;
+  color: var(--txt, #e2e8f0);
+}
+[data-theme="light"] .msg-ai .bubble h1,
+[data-theme="light"] .msg-ai .bubble h2,
+[data-theme="light"] .msg-ai .bubble h3 { color: #0f0a2e; }
+.msg-ai .bubble code {
+  background: rgba(79,70,229,.12);
+  color: #a5b4fc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+[data-theme="light"] .msg-ai .bubble code {
+  background: rgba(79,70,229,.08);
+  color: #4f46e5;
+}
+.msg-ai .bubble pre {
+  background: rgba(5,7,15,.6);
+  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border-radius: 8px;
+  padding: 14px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+[data-theme="light"] .msg-ai .bubble pre {
+  background: #f3f4f6;
+  border-color: rgba(0,0,0,.1);
+}
+.msg-ai .bubble pre code {
+  background: none;
+  color: var(--txt, #e2e8f0);
+  padding: 0;
+}
+[data-theme="light"] .msg-ai .bubble pre code { color: #111827; }
+.msg-ai .bubble ul,
+.msg-ai .bubble ol { padding-left: 20px; margin: 8px 0; }
+.msg-ai .bubble strong { color: var(--txt, #e2e8f0); font-weight: 700; }
+[data-theme="light"] .msg-ai .bubble strong { color: #111827; }
+
+/* Follow-up chips */
+.followup-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.followup-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(79,70,229,.3);
+  background: rgba(79,70,229,.06);
+  color: #818cf8;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.followup-chip:hover {
+  background: rgba(79,70,229,.15);
+  border-color: #4f46e5;
+}
+[data-theme="light"] .followup-chip { color: #4f46e5; }
+
+/* Resources */
+.resources-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.resource-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(16,185,129,.1);
+  color: #34d399;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .2s;
+}
+.resource-link:hover { background: rgba(16,185,129,.2); }
+[data-theme="light"] .resource-link { background: rgba(5,150,105,.08); color: #059669; }
+
+/* Typing indicator */
+.typing-dots span {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #818cf8;
+  margin: 0 2px;
+  animation: bounce .8s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: .15s; }
+.typing-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+/* Agent steps */
+.agent-steps {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.agent-step {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(79,70,229,.08);
+  color: #818cf8;
+  border: 1px solid rgba(79,70,229,.15);
+}
+
+/* Input bar */
+.input-bar {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border, rgba(255,255,255,.08));
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+[data-theme="light"] .input-bar { border-top-color: rgba(0,0,0,.08); }
+
+.chat-input {
+  flex: 1;
+  background: var(--ink2, #0a0d1a);
+  border: 1.5px solid var(--border, rgba(255,255,255,.1));
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--txt, #e2e8f0);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 14px;
+  resize: none;
+  min-height: 48px;
+  max-height: 140px;
+  outline: none;
+  transition: border-color .2s;
+  line-height: 1.5;
+}
+.chat-input:focus { border-color: #4f46e5; }
+.chat-input::placeholder { color: var(--txt3, #475569); }
+[data-theme="light"] .chat-input {
+  background: #fff;
+  border-color: rgba(0,0,0,.12);
+  color: #111827;
+}
+[data-theme="light"] .chat-input::placeholder { color: #9ca3af; }
+[data-theme="light"] .chat-input:focus { border-color: #4f46e5; }
+
+.send-btn {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#4f46e5,#6d28d9);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(79,70,229,.35);
+  transition: all .2s;
+}
+.send-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(79,70,229,.5); }
+.send-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.input-hint {
+  font-size: 11px;
+  color: var(--txt3, #475569);
+  padding: 0 20px 10px;
+  flex-shrink: 0;
+}
+[data-theme="light"] .input-hint { color: #9ca3af; }
+
+/* Session panel cards */
+.panel-card {
+  background: var(--card-bg, rgba(255,255,255,.03));
+  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+[data-theme="light"] .panel-card {
+  background: #fff;
+  border-color: rgba(0,0,0,.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.panel-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--txt3, #475569);
+  margin-bottom: 10px;
+}
+.panel-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,.05));
+  font-size: 13px;
+}
+.panel-stat:last-child { border-bottom: none; }
+.panel-stat-label { color: var(--txt2, #94a3b8); }
+.panel-stat-value {
+  font-weight: 700;
+  color: #4f46e5;
+  font-family: 'Clash Display', sans-serif;
+  font-size: 16px;
+}
+[data-theme="light"] .panel-stat-label { color: #6b7280; }
+
+/* Subject select */
+.subject-select {
+  background: var(--ink2, #0a0d1a);
+  border: 1.5px solid var(--border, rgba(255,255,255,.1));
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--txt, #e2e8f0);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  cursor: pointer;
+  margin-top: 8px;
+}
+[data-theme="light"] .subject-select {
+  background: #fff;
+  border-color: rgba(0,0,0,.12);
+  color: #111827;
+}
+.subject-select option { background: var(--ink3, #0f1222); }
+</style>
+
+<div class="tutor-wrap">
+
+  <!-- ── CHAT AREA ── -->
+  <div class="chat-area">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-title">
+        🤖 AI Tutor —
+        <span id="current-subject-label">{{ session_subject or 'General' }}</span>
+      </div>
+      <div class="chat-subtitle">
+        Multi-agent pipeline: LangGraph + Gemini AI
+      </div>
+    </div>
+
+    <!-- Mode bar -->
+    <div class="mode-bar">
+      {% for mode_id, mode_label in [
+        ('tutor','📖 Tutor'),
+        ('socratic','🤔 Socratic'),
+        ('exam_prep','📋 Exam Prep'),
+        ('creative','🎨 Creative'),
+        ('debug','🔧 Debug')
+      ] %}
+      <button class="mode-btn {% if (session_mode or 'tutor') == mode_id %}active{% endif %}"
+              data-mode="{{ mode_id }}"
+              onclick="setMode('{{ mode_id }}', this)">
+        {{ mode_label }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- XP hint -->
+    <div class="xp-bar-mini" id="xp-hint">+0 XP this session</div>
+
+    <!-- Messages -->
+    <div class="messages" id="messages">
+      <div class="welcome-msg">
+        <p>👋 <strong>Hello, {{ current_user.display_name or 'there' }}!</strong> I'm your <strong>Smart AI Tutor</strong>.</p>
+        <br>
+        <p>I'm powered by a <strong>5-agent LangGraph pipeline</strong> — I classify your intent, retrieve knowledge, map curriculum, generate a personalized response, then quality-check it all before you see it.</p>
+        <br>
+        <p>
+          <strong>Active Mode:</strong>
+          <span id="welcome-mode-label">📖 Tutor</span>
+          &nbsp;|&nbsp;
+          <strong>Subject:</strong>
+          <span id="welcome-subject-label">{{ session_subject or 'General' }}</span>
+        </p>
+        <p>
+          <strong>Your Style:</strong> {{ current_user.learning_style or 'Visual' }}
+          &nbsp;|&nbsp;
+          <strong>Level:</strong> {{ current_user.grade_level or 'Student' }}
+        </p>
+        <br>
+        <p><em>What would you like to explore today?</em></p>
+        <p style="font-size:12px;color:var(--txt3,#475569);margin-top:4px">Smart AI Tutor · just now</p>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-bar">
+      <textarea
+        id="chat-input"
+        class="chat-input"
+        placeholder="Ask anything… e.g. Explain Newton's 2nd law"
+        rows="1"
+      ></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+    <div class="input-hint">
+      Enter to send · Shift+Enter for newline ·
+      Mode: <span id="mode-hint-label">Tutor</span>
+    </div>
+
+  </div><!-- .chat-area -->
+
+  <!-- ── SESSION PANEL ── -->
+  <div class="session-panel">
+
+    <!-- Subject selector -->
+    <div class="panel-card">
+      <div class="panel-label">Subject</div>
+      <select class="subject-select" id="subject-select" onchange="setSubject(this.value)">
+        <option value="General"          {% if (session_subject or 'General')=='General'          %}selected{% endif %}>General</option>
+        <option value="Mathematics"      {% if session_subject=='Mathematics'      %}selected{% endif %}>📐 Mathematics</option>
+        <option value="Physics"          {% if session_subject=='Physics'          %}selected{% endif %}>⚛️ Physics</option>
+        <option value="Chemistry"        {% if session_subject=='Chemistry'        %}selected{% endif %}>🧪 Chemistry</option>
+        <option value="Biology"          {% if session_subject=='Biology'          %}selected{% endif %}>🧬 Biology</option>
+        <option value="Computer Science" {% if session_subject=='Computer Science' %}selected{% endif %}>💻 Computer Science</option>
+        <option value="English"          {% if session_subject=='English'          %}selected{% endif %}>📝 English</option>
+      </select>
+      <!-- Live indicator -->
+      <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;animation:pulse 2s infinite"></div>
+        <span style="font-size:11px;color:var(--txt3,#475569)">Gemini AI Connected</span>
+      </div>
+    </div>
+
+    <!-- Session stats -->
+    <div class="panel-card">
+      <div class="panel-label">📊 Session</div>
+      <div class="panel-stat">
+        <span class="panel-stat-label">Messages</span>
+        <span class="panel-stat-value" id="stat-messages">0</span>
+      </div>
+      <div class="panel-stat">
+        <span class="panel-stat-label">XP Earned</span>
+        <span class="panel-stat-value" id="stat-xp">0</span>
+      </div>
+      <div class="panel-stat">
+        <span class="panel-stat-label">Level</span>
+        <span class="panel-stat-value">{{ current_user.level }}</span>
+      </div>
+      <div class="panel-stat">
+        <span class="panel-stat-label">Total XP</span>
+        <span class="panel-stat-value" id="stat-total-xp">{{ current_user.xp_points }}</span>
+      </div>
+    </div>
+
+    <!-- Pipeline info -->
+    <div class="panel-card">
+      <div class="panel-label">🔗 Pipeline</div>
+      {% for step in ['Intent Classifier','Knowledge Retriever','Curriculum Mapper','Response Generator','Quality Checker'] %}
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;
+                  border-bottom:1px solid var(--border,rgba(255,255,255,.05));font-size:12px;color:var(--txt2,#94a3b8)">
+        <span style="width:18px;height:18px;border-radius:50%;background:rgba(79,70,229,.15);
+                     border:1px solid rgba(79,70,229,.3);display:flex;align-items:center;justify-content:center;
+                     font-size:9px;color:#818cf8;flex-shrink:0">{{ loop.index }}</span>
+        {{ step }}
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Quick actions -->
+    <div class="panel-card">
+      <div class="panel-label">⚡ Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <a href="{{ url_for('quiz') }}" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;border-radius:8px">
+          📝 Take a Quiz
+        </a>
+        <a href="{{ url_for('study_plans') }}" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;border-radius:8px">
+          🗺️ Study Plan
+        </a>
+        <a href="{{ url_for('pdf_chat_page') }}" class="btn btn-secondary btn-sm" style="text-align:center;text-decoration:none;border-radius:8px">
+          📄 PDF Chat
+        </a>
+      </div>
+    </div>
+
+  </div><!-- .session-panel -->
+
+</div><!-- .tutor-wrap -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+var currentMode    = '{{ session_mode or "tutor" }}';
+var currentSubject = '{{ session_subject or "General" }}';
+var sessionId      = '{{ session_id or "" }}';
+var sessionXP      = 0;
+var sessionMsgs    = 0;
+
+var modeLabels = {
+  tutor:    '📖 Tutor',
+  socratic: '🤔 Socratic',
+  exam_prep:'📋 Exam Prep',
+  creative: '🎨 Creative',
+  debug:    '🔧 Debug'
+};
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var label = modeLabels[mode] || mode;
+  document.getElementById('mode-hint-label').textContent = label.replace(/^[^\s]+\s/,'');
+  document.getElementById('welcome-mode-label').textContent = label;
+}
+
+function setSubject(subj) {
+  currentSubject = subj;
+  document.getElementById('current-subject-label').textContent = subj;
+  document.getElementById('welcome-subject-label').textContent = subj;
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderMarkdown(text) {
+  return text
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/^\d+\. (.+)$/gm, '<li style="list-style:decimal">$1</li>')
+    .replace(/^[•\-\*] (.+)$/gm, '<li>$1</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+function appendMsg(role, content, extras) {
+  var container = document.getElementById('messages');
+  // Remove welcome msg on first real message
+  var welcome = container.querySelector('.welcome-msg');
+  if (welcome) welcome.remove();
+
+  var div = document.createElement('div');
+
+  if (role === 'user') {
+    div.className = 'msg-user';
+    div.innerHTML = '<div class="bubble">' + escHtml(content) + '</div>';
+  } else {
+    extras = extras || {};
+    var stepsHtml = '';
+    if (extras.steps && extras.steps.length) {
+      stepsHtml = '<div class="agent-steps">' +
+        extras.steps.map(function(s){ return '<span class="agent-step">' + escHtml(s) + '</span>'; }).join('') +
+        '</div>';
+    }
+    var resourcesHtml = '';
+    if (extras.resources && extras.resources.length) {
+      resourcesHtml = '<div class="resources-row">' +
+        extras.resources.map(function(r){
+          return '<a href="' + r.url + '" target="_blank" class="resource-link">🔗 ' + escHtml(r.name) + '</a>';
+        }).join('') + '</div>';
+    }
+    var followupsHtml = '';
+    if (extras.followups && extras.followups.length) {
+      followupsHtml = '<div class="followup-chips">' +
+        extras.followups.map(function(q){
+          return '<span class="followup-chip" onclick="quickAsk(this)">' + escHtml(q) + '</span>';
+        }).join('') + '</div>';
+    }
+    div.className = 'msg-ai';
+    div.innerHTML =
+      '<div class="avatar">🧠</div>' +
+      '<div class="bubble">' +
+        renderMarkdown(content) +
+        stepsHtml + resourcesHtml + followupsHtml +
+      '</div>';
+  }
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  var container = document.getElementById('messages');
+  var div = document.createElement('div');
+  div.className = 'msg-ai'; div.id = 'typing';
+  div.innerHTML =
+    '<div class="avatar">🧠</div>' +
+    '<div class="bubble" style="padding:14px 20px">' +
+    '<div class="typing-dots"><span></span><span></span><span></span></div>' +
+    '</div>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+function removeTyping() {
+  var t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function quickAsk(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  sendMessage();
+}
+
+async function sendMessage() {
+  var input = document.getElementById('chat-input');
+  var msg   = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  input.style.height = '48px';
+  document.getElementById('send-btn').disabled = true;
+
+  appendMsg('user', msg);
+  showTyping();
+
+  try {
+    var resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message:    msg,
+        session_id: sessionId,
+        mode:       currentMode,
+        subject:    currentSubject,
+        use_pdf:    false
+      })
+    });
+    var data = await resp.json();
+    removeTyping();
+
+    if (data.error) {
+      appendMsg('ai', '❌ Error: ' + data.error);
+    } else {
+      appendMsg('ai', data.response || 'No response.', {
+        steps:     data.agent_steps    || [],
+        resources: data.resources      || [],
+        followups: data.follow_up_questions || []
+      });
+
+      // Update stats
+      sessionMsgs++;
+      sessionXP += (data.xp_earned || 10);
+      document.getElementById('stat-messages').textContent = sessionMsgs;
+      document.getElementById('stat-xp').textContent      = sessionXP;
+      document.getElementById('stat-total-xp').textContent = data.total_xp || '—';
+      document.getElementById('xp-hint').textContent       = '+' + sessionXP + ' XP this session';
+
+      // Achievement toast
+      if (data.new_achievements && data.new_achievements.length) {
+        data.new_achievements.forEach(function(a) {
+          if (window.showToast) showToast('🏆 Achievement: ' + (a.name || a), 'xp');
+        });
+      }
+      if (data.leveled_up && window.showToast) {
+        showToast('⬆️ Level Up! You are now Level ' + data.level, 'xp');
+      }
+    }
+  } catch (err) {
+    removeTyping();
+    appendMsg('ai', '❌ Connection error. Please check your internet and try again.');
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  input.focus();
+}
+
+// Auto-resize textarea
+document.getElementById('chat-input').addEventListener('input', function(){
+  this.style.height = '48px';
+  this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+});
+
+// Enter to send
+document.getElementById('chat-input').addEventListener('keydown', function(e){
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+</script>
+{% endblock %}

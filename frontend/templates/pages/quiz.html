@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Smart Quiz — NeuroTutor{% endblock %}
+{% block extra_head %}
+<style>
+.quiz-setup,.quiz-active,.quiz-result{display:none}
+.quiz-setup.on,.quiz-active.on,.quiz-result.on{display:block}
+.q-card{background:var(--ink3);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;margin-bottom:18px}
+.q-text{font-family:'Clash Display',sans-serif;font-size:20px;font-weight:600;line-height:1.5;margin-bottom:22px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:12px;border:2px solid var(--border);background:var(--ink2);color:var(--txt);font-family:'Instrument Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;text-align:left;transition:all .2s;width:100%}
+.opt:hover{border-color:var(--indigo);background:rgba(79,70,229,.05)}
+.opt.chosen{border-color:var(--indigo);background:rgba(79,70,229,.1);color:var(--neon)}
+.opt.correct{border-color:var(--emerald)!important;background:rgba(16,185,129,.08)!important;color:var(--sage)!important}
+.opt.wrong{border-color:var(--rose)!important;background:rgba(225,29,72,.07)!important;color:#fda4af!important}
+.opt-key{width:28px;height:28px;border-radius:8px;background:var(--ink4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;transition:all .2s}
+.chosen .opt-key{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.correct .opt-key{background:var(--emerald);border-color:var(--emerald);color:#fff}
+.wrong .opt-key{background:var(--rose);border-color:var(--rose);color:#fff}
+.q-progress{height:5px;background:var(--ink2);border-radius:3px;margin-bottom:20px;overflow:hidden}
+.q-progress-fill{height:100%;background:linear-gradient(90deg,var(--indigo),#6d28d9);border-radius:3px;transition:width .4s}
+.timer-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--amber);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
+.hint-box{margin-top:14px;padding:12px 14px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:13px;color:var(--amber2);display:none}
+/* Score ring */
+.score-ring{width:140px;height:140px;position:relative;margin:0 auto 24px;display:flex;align-items:center;justify-content:center}
+.ring-inner{position:absolute;width:108px;height:108px;border-radius:50%;background:var(--ink3);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-svg{position:absolute;inset:0}
+.grade-text{font-family:'Clash Display',sans-serif;font-size:36px;font-weight:800}
+/* Feedback */
+.fb-item{padding:14px;border-radius:12px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.fb-ok{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18)}
+.fb-no{background:rgba(225,29,72,.06);border:1px solid rgba(225,29,72,.18)}
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="page-hdr">
+  <h1>🧠 Smart Quiz Engine</h1>
+  <p class="text-muted">AI-generated adaptive quizzes with instant deep feedback</p>
+</div>
+
+<!-- Setup -->
+<div class="quiz-setup on" id="qSetup">
+  <div style="max-width:600px">
+    <div class="card">
+      <h3 style="font-family:'Clash Display',sans-serif;font-size:20px;margin-bottom:20px">⚙️ Configure Quiz</h3>
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <select class="form-select" id="qSubject">
+          {% for s in ['Mathematics','Physics','Chemistry','Biology','Computer Science','History','Geography','English Literature','Economics'] %}
+          <option>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Specific Topic <span class="text-dim">(optional)</span></label>
+        <input type="text" class="form-input" id="qTopic" placeholder="e.g. Quadratic equations, Photosynthesis, World War I…">
+      </div>
+      <div class="grid cols-2">
+        <div class="form-group">
+          <label class="form-label">Difficulty</label>
+          <select class="form-select" id="qDiff">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Questions</label>
+          <select class="form-select" id="qCount">
+            <option value="3">3 Questions</option>
+            <option value="5" selected>5 Questions</option>
+            <option value="8">8 Questions</option>
+            <option value="10">10 Questions</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-lg btn-full" id="startBtn" onclick="startQuiz()">
+        🚀 Generate AI Quiz
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Active Quiz -->
+<div class="quiz-active" id="qActive">
+  <div style="max-width:700px">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex gap-2">
+        <span class="badge badge-indigo" id="qCounter">Q 1/5</span>
+        <span class="badge badge-violet" id="qSubBadge">Mathematics</span>
+        <span class="badge badge-amber" id="qDiffBadge">Medium</span>
+      </div>
+      <div class="timer-badge">⏱ <span id="timer">00:00</span></div>
+    </div>
+    <div class="q-progress"><div class="q-progress-fill" id="qProgress" style="width:0%"></div></div>
+    <div class="q-card">
+      <div class="q-text" id="qText">Loading…</div>
+      <div class="opts" id="qOpts"></div>
+      <div class="hint-box" id="hintBox"></div>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-ghost" onclick="showHint()">💡 Hint</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextQ()" disabled style="flex:1">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="quiz-result" id="qResult">
+  <div style="max-width:700px">
+    <div class="card" style="text-align:center;padding:40px;margin-bottom:18px">
+      <div class="score-ring">
+        <svg class="ring-svg" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="var(--ink2)" stroke-width="14"/>
+          <circle cx="70" cy="70" r="60" fill="none" stroke="url(#rg)" stroke-width="14"
+            stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"
+            id="ringCircle" transform="rotate(-90 70 70)"/>
+          <defs>
+            <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#4f46e5"/>
+              <stop offset="100%" stop-color="#6d28d9"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="ring-inner">
+          <div class="grade-text" id="gradeDisp">A</div>
+          <div class="text-sm text-muted" id="pctDisp">100%</div>
+        </div>
+      </div>
+      <h2 style="font-family:'Clash Display',sans-serif;font-size:26px;margin-bottom:8px" id="resultMsg">Outstanding!</h2>
+      <p class="text-muted" id="resultSub">5/5 correct</p>
+      <div class="flex justify-between" style="max-width:280px;margin:20px auto 0">
+        <div style="text-align:center">
+          <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:var(--amber)" id="xpDisp">+100 XP</div>
+          <div class="text-xs text-dim">Earned</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:var(--cyan)" id="timeDisp">0:00</div>
+          <div class="text-xs text-dim">Time</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:var(--electric)" id="ptDisp">0/50</div>
+          <div class="text-xs text-dim">Points</div>
+        </div>
+      </div>
+      <div class="flex gap-3" style="justify-content:center;margin-top:24px">
+        <button class="btn btn-primary btn-lg" onclick="retry()">🔄 New Quiz</button>
+        <a href="{{ url_for('tutor') }}" class="btn btn-secondary btn-lg">🤖 Ask AI Tutor</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="font-family:'Clash Display',sans-serif;font-size:18px;margin-bottom:16px">📋 Detailed Feedback</h3>
+      <div id="fbContainer"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let qData=null, qi=0, answers={}, t0=null, tiv=null;
+
+async function startQuiz() {
+  const btn=document.getElementById('startBtn');
+  btn.disabled=true; btn.textContent='⏳ Generating with AI…';
+  try {
+    qData = await API.post('/api/quiz/generate',{
+      subject:document.getElementById('qSubject').value,
+      topic:document.getElementById('qTopic').value,
+      difficulty:document.getElementById('qDiff').value,
+      num_questions:document.getElementById('qCount').value,
+    });
+    document.getElementById('qSetup').classList.remove('on');
+    document.getElementById('qActive').classList.add('on');
+    qi=0; answers={}; t0=Date.now();
+    startTimer(); renderQ();
+    btn.disabled=false; btn.textContent='🚀 Generate AI Quiz';
+  } catch(e) {
+    Toast.error('Quiz generation failed: '+e.message);
+    btn.disabled=false; btn.textContent='🚀 Generate AI Quiz';
+  }
+}
+
+function startTimer() {
+  tiv=setInterval(()=>{
+    const s=Math.floor((Date.now()-t0)/1000);
+    document.getElementById('timer').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  },1000);
+}
+
+function renderQ() {
+  const q=qData.questions[qi], tot=qData.questions.length;
+  document.getElementById('qCounter').textContent=`Q ${qi+1}/${tot}`;
+  document.getElementById('qSubBadge').textContent=qData.subject;
+  document.getElementById('qDiffBadge').textContent=qData.difficulty;
+  document.getElementById('qProgress').style.width=`${(qi/tot)*100}%`;
+  document.getElementById('qText').textContent=q.question;
+  document.getElementById('hintBox').style.display='none';
+  document.getElementById('nextBtn').disabled=true;
+  document.getElementById('nextBtn').textContent = qi===tot-1 ? 'Submit Quiz ✓' : 'Next →';
+  const opts=document.getElementById('qOpts');
+  opts.innerHTML=Object.entries(q.options).map(([k,v])=>
+    `<button class="opt" id="opt_${k}" onclick="pick('${k}')">
+      <span class="opt-key">${k}</span><span>${v}</span>
+    </button>`
+  ).join('');
+}
+
+function pick(key) {
+  if(answers[qData.questions[qi].id]) return;
+  const q=qData.questions[qi];
+  answers[q.id]=key;
+  document.querySelectorAll('.opt').forEach(b=>b.onclick=null);
+  document.getElementById(`opt_${key}`).classList.add('chosen');
+  setTimeout(()=>{
+    document.getElementById(`opt_${q.correct}`).classList.add('correct');
+    if(key!==q.correct) {
+      document.getElementById(`opt_${key}`).classList.remove('chosen');
+      document.getElementById(`opt_${key}`).classList.add('wrong');
+    }
+    document.getElementById('nextBtn').disabled=false;
+  },400);
+}
+
+function showHint() {
+  const h=qData.questions[qi].hint;
+  if(h){document.getElementById('hintBox').style.display='block';document.getElementById('hintBox').innerHTML='💡 <strong>Hint:</strong> '+h;}
+}
+
+function nextQ() {
+  qi++;
+  if(qi>=qData.questions.length){submitQuiz();return;}
+  document.getElementById('nextBtn').textContent=qi===qData.questions.length-1?'Submit Quiz ✓':'Next →';
+  renderQ();
+}
+
+async function submitQuiz() {
+  clearInterval(tiv);
+  const taken=(Date.now()-t0)/1000;
+  const ans={};
+  qData.questions.forEach(q=>{ans[String(q.id)]=answers[q.id]||'';});
+  try {
+    const r=await API.post('/api/quiz/submit',{
+      subject:qData.subject,topic:qData.topic,
+      answers:ans,quiz_data:qData,time_taken:taken,
+    });
+    showResult(r,taken);
+  } catch(e){Toast.error('Submit error: '+e.message);}
+}
+
+function showResult(r,taken) {
+  document.getElementById('qActive').classList.remove('on');
+  document.getElementById('qResult').classList.add('on');
+  const sc=r.score||0, off=377*(1-sc/100);
+  document.getElementById('ringCircle').style.strokeDashoffset=off;
+  document.getElementById('gradeDisp').textContent=r.grade||'F';
+  document.getElementById('pctDisp').textContent=sc+'%';
+  document.getElementById('resultMsg').textContent=r.message||'Quiz Complete!';
+  document.getElementById('resultSub').textContent=`${r.correct}/${r.total} correct`;
+  document.getElementById('xpDisp').textContent='+'+r.xp_earned+' XP';
+  document.getElementById('timeDisp').textContent=fmtTime(taken);
+  document.getElementById('ptDisp').textContent=`${r.earned_points||0}/${r.total_points||0}`;
+  const fb=document.getElementById('fbContainer');
+  fb.innerHTML=(r.feedback||[]).map(f=>`
+    <div class="fb-item ${f.is_correct?'fb-ok':'fb-no'}">
+      <span style="font-size:18px;flex-shrink:0">${f.is_correct?'✅':'❌'}</span>
+      <div>
+        <div class="fw-600 text-sm mb-1">${f.question}</div>
+        <div class="text-sm text-muted">Your answer: <strong>${f.user_answer||'Skipped'}</strong> · Correct: <strong style="color:var(--sage)">${f.correct_answer}</strong></div>
+        ${f.explanation?`<div class="text-xs text-dim mt-1">💡 ${f.explanation}</div>`:''}
+      </div>
+    </div>`).join('');
+  if(r.xp_earned) XPSystem.show(r.xp_earned);
+  if(r.new_achievements?.length) showAchievements(r.new_achievements);
+}
+
+function retry() {
+  document.getElementById('qResult').classList.remove('on');
+  document.getElementById('qSetup').classList.add('on');
+}
+</script>
+{% endblock %}

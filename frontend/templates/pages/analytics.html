@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Analytics — NeuroTutor{% endblock %}
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#1e2d45';
+.chart-card{background:var(--ink3);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px}
+.chart-title{font-family:'Clash Display',sans-serif;font-size:16px;font-weight:600;margin-bottom:16px}
+.rec-card{padding:12px 14px;border-radius:10px;background:var(--ink2);border-left:3px solid var(--indigo);margin-bottom:9px;font-size:14px}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <h1>📊 Learning Analytics</h1>
+  <p class="text-muted">AI-powered insights into your learning performance</p>
+</div>
+<div id="analyticsWrap">
+  <div style="text-align:center;padding:60px;color:var(--txt3)"><div style="font-size:40px;margin-bottom:12px">⏳</div><p>Loading analytics…</p></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const COPT={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e2d45'},ticks:{color:'#94a3b8',font:{size:11}}},y:{grid:{color:'#1e2d45'},ticks:{color:'#94a3b8',font:{size:11}}}}};
+async function load(){
+  try{
+    const d=await API.get('/api/analytics');
+    const ov=d.overview||{};
+    document.getElementById('analyticsWrap').innerHTML=`
+      <div class="grid cols-4 mb-6">
+        <div class="card"><div class="stat-card"><div class="stat-icon" style="background:rgba(79,70,229,.15)">💬</div><div><div class="stat-val">${ov.total_sessions||0}</div><div class="stat-lbl">Sessions</div></div></div></div>
+        <div class="card"><div class="stat-card"><div class="stat-icon" style="background:rgba(6,182,212,.15)">📝</div><div><div class="stat-val">${ov.total_quizzes||0}</div><div class="stat-lbl">Quizzes</div></div></div></div>
+        <div class="card"><div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,.15)">📊</div><div><div class="stat-val">${ov.avg_score||0}%</div><div class="stat-lbl">Avg Score</div></div></div></div>
+        <div class="card"><div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,.15)">📈</div><div><div class="stat-val">${ov.improvement>=0?'+':''}${ov.improvement||0}%</div><div class="stat-lbl">Improvement</div></div></div></div>
+      </div>
+      <div class="grid cols-2 mb-6">
+        <div class="chart-card"><div class="chart-title">📈 Score Trend</div>
+          ${d.score_trend?.length?'<div style="height:200px"><canvas id="trendChart"></canvas></div>':'<div style="text-align:center;padding:40px;color:var(--txt3)">Take quizzes to see your trend</div>'}
+        </div>
+        <div class="chart-card"><div class="chart-title">📚 Subject Performance</div>
+          ${d.subject_performance?.length?'<div style="height:200px"><canvas id="subjChart"></canvas></div>':'<div style="text-align:center;padding:40px;color:var(--txt3)">No data yet</div>'}
+        </div>
+      </div>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3 style="font-family:'Clash Display',sans-serif;font-size:16px;margin-bottom:14px">💪 Strengths</h3>
+          ${d.strengths?.length?d.strengths.map(s=>`<span class="badge badge-emerald" style="margin-right:6px;margin-bottom:6px">${s}</span>`).join(''):'<p class="text-sm text-muted">Take more quizzes to discover strengths</p>'}
+          <h3 style="font-family:'Clash Display',sans-serif;font-size:16px;margin:18px 0 12px">📌 Improve</h3>
+          ${d.weak_areas?.length?d.weak_areas.map(s=>`<span class="badge badge-rose" style="margin-right:6px;margin-bottom:6px">${s}</span>`).join(''):'<p class="text-sm text-muted">No weak areas identified yet</p>'}
+        </div>
+        <div class="card">
+          <h3 style="font-family:'Clash Display',sans-serif;font-size:16px;margin-bottom:14px">🤖 AI Recommendations</h3>
+          ${(d.recommendations||[{type:'info',icon:'🚀',msg:'Start learning to get personalized recommendations!'}]).map(r=>`<div class="rec-card" style="border-left-color:${r.type==='success'?'var(--emerald)':r.type==='warning'?'var(--amber)':'var(--indigo)'}">${r.icon} ${r.msg}</div>`).join('')}
+        </div>
+      </div>`;
+    if(d.score_trend?.length){
+      new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:d.score_trend.map(x=>x.date),datasets:[{data:d.score_trend.map(x=>x.score),borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#4f46e5'}]},options:{...COPT,maintainAspectRatio:false}});
+    }
+    if(d.subject_performance?.length){
+      new Chart(document.getElementById('subjChart'),{type:'bar',data:{labels:d.subject_performance.map(x=>x.subject),datasets:[{data:d.subject_performance.map(x=>x.avg_score),backgroundColor:['#4f46e5','#6d28d9','#06b6d4','#10b981','#f59e0b','#e11d48'],borderRadius:8}]},options:{...COPT,maintainAspectRatio:false}});
+    }
+  }catch(e){document.getElementById('analyticsWrap').innerHTML='<div style="text-align:center;padding:60px;color:var(--txt3)"><p>No data yet. Start learning!</p><a href="/tutor" class="btn btn-primary" style="margin-top:16px">Start Learning</a></div>';}
+}
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+# ── Environment & Secrets ─────────────────────────────────────
+.env
+*.env
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.pyc
+
+# ── Virtual Environment ───────────────────────────────────────
+venv/
+env/
+ENV/
+.venv/
+
+# ── Database ──────────────────────────────────────────────────
+instance/neurtutor.db
+instance/*.db
+*.db
+*.sqlite
+*.sqlite3
+
+# ── ChromaDB Vector Store ─────────────────────────────────────
+instance/chroma_db/
+
+# ── Student PDF Uploads ───────────────────────────────────────
+instance/uploads/
+
+# ── IDE & Editor ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Build & Dist ──────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+desktop.ini

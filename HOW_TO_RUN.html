@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeuroTutor AI — Setup Guide (Gemini)</title>
+<style>
+:root{--ink:#05070f;--s1:#0b0e1a;--s2:#111827;--bd:rgba(255,255,255,.08);--indigo:#4f46e5;--neon:#a5b4fc;--amber:#f59e0b;--emerald:#10b981;--rose:#e11d48;--cyan:#06b6d4;--txt:#e2e8f0;--txt2:#94a3b8;--txt3:#475569}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{background:var(--ink);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(79,70,229,.12),transparent 60%);pointer-events:none;z-index:0}
+.wrap{max-width:900px;margin:0 auto;padding:48px 24px;position:relative;z-index:1}
+
+/* Header */
+.hdr{text-align:center;margin-bottom:60px}
+.hdr-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(79,70,229,.1);border:1px solid rgba(79,70,229,.3);border-radius:50px;padding:7px 18px;font-size:13px;font-weight:600;color:var(--neon);margin-bottom:20px}
+.hdr h1{font-size:clamp(32px,5vw,52px);font-weight:800;letter-spacing:-.03em;margin-bottom:12px}
+.grad{background:linear-gradient(135deg,#4f46e5,#6d28d9,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr p{color:var(--txt2);font-size:17px;max-width:560px;margin:0 auto}
+
+/* Section */
+.section{margin-bottom:48px}
+.section-title{font-size:22px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:10px;letter-spacing:-.02em}
+.section-title .num{width:32px;height:32px;background:linear-gradient(135deg,#4f46e5,#6d28d9);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+
+/* Cards */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:14px}
+.card-highlight{background:linear-gradient(135deg,rgba(79,70,229,.1),rgba(109,40,217,.06));border-color:rgba(79,70,229,.3)}
+.card-amber{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.25)}
+.card-emerald{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.25)}
+.card-rose{background:rgba(225,29,72,.06);border-color:rgba(225,29,72,.2)}
+
+/* OS tabs */
+.os-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.os-tab{padding:7px 16px;border-radius:8px;border:1.5px solid var(--bd);background:transparent;color:var(--txt2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.os-tab.on{border-color:var(--indigo);background:rgba(79,70,229,.12);color:var(--neon)}
+.os-panel{display:none}.os-panel.on{display:block}
+
+/* Code block */
+.code{background:#000;border:1px solid var(--bd);border-radius:12px;padding:18px 20px;margin:10px 0;position:relative;overflow-x:auto}
+.code pre{font-family:'JetBrains Mono','Fira Code',monospace;font-size:14px;line-height:1.7;color:#e2e8f0;white-space:pre}
+.code .cm{color:#64748b}
+.code .kw{color:var(--neon)}
+.code .st{color:var(--amber)}
+.code .co{color:var(--emerald)}
+.code .hi{color:#f472b6}
+.copy-btn{position:absolute;top:10px;right:10px;padding:5px 12px;background:rgba(255,255,255,.07);border:1px solid var(--bd);border-radius:6px;color:var(--txt2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.copy-btn:hover{background:rgba(79,70,229,.2);color:var(--neon)}
+.copy-btn.done{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.3);color:var(--emerald)}
+
+/* Steps inside card */
+.steps-list{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.step-item{display:flex;gap:14px;align-items:flex-start}
+.step-circle{width:28px;height:28px;border-radius:50%;background:rgba(79,70,229,.15);border:1.5px solid rgba(79,70,229,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--neon);flex-shrink:0;margin-top:2px}
+.step-text{font-size:15px;color:var(--txt)}
+.step-text strong{color:#fff}
+.step-text code{background:rgba(79,70,229,.15);color:var(--neon);padding:2px 7px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:13px}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-indigo{background:rgba(79,70,229,.15);color:var(--neon)}
+.badge-amber{background:rgba(245,158,11,.15);color:#fcd34d}
+.badge-green{background:rgba(16,185,129,.15);color:#6ee7b7}
+.badge-cyan{background:rgba(6,182,212,.15);color:var(--cyan)}
+
+/* Info box */
+.info-box{padding:14px 16px;border-radius:10px;font-size:14px;margin:12px 0}
+.info-indigo{background:rgba(79,70,229,.08);border-left:3px solid var(--indigo);color:var(--txt2)}
+.info-amber{background:rgba(245,158,11,.08);border-left:3px solid var(--amber);color:#fcd34d}
+.info-green{background:rgba(16,185,129,.08);border-left:3px solid var(--emerald);color:#6ee7b7}
+.info-rose{background:rgba(225,29,72,.08);border-left:3px solid var(--rose);color:#fca5a5}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+th{background:rgba(79,70,229,.1);color:var(--neon);padding:10px 14px;text-align:left;font-weight:700;border-bottom:1px solid rgba(79,70,229,.2)}
+td{padding:10px 14px;border-bottom:1px solid var(--bd);color:var(--txt2)}
+td:first-child{color:var(--txt);font-weight:600}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* Link */
+a{color:var(--neon);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Divider */
+.divider{border:none;border-top:1px solid var(--bd);margin:40px 0}
+
+/* Architecture */
+.arch{background:#000;border:1px solid var(--bd);border-radius:12px;padding:20px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.8;overflow-x:auto}
+.arch .box{color:var(--neon)}
+.arch .arrow{color:var(--amber)}
+.arch .label{color:var(--txt2)}
+
+/* Troubleshoot */
+.trouble-item{padding:14px 16px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;margin-bottom:8px}
+.trouble-q{font-weight:700;color:var(--rose);margin-bottom:6px;font-size:14px}
+.trouble-a{font-size:14px;color:var(--txt2)}
+.trouble-a code{background:rgba(79,70,229,.15);color:var(--neon);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px}
+
+@media(max-width:600px){.os-tabs{flex-direction:column}.hdr h1{font-size:28px}.code pre{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-badge">🧠 Google Gemini Edition — Free API Key</div>
+  <h1>Run <span class="grad">NeuroTutor AI</span><br>on Your Machine</h1>
+  <p>Complete step-by-step guide using your Google Gemini API key (free tier: 1M tokens/month)</p>
+</div>
+
+<!-- Prerequisites -->
+<div class="section">
+  <div class="section-title"><span class="num">0</span> Prerequisites</div>
+  <div class="card">
+    <table>
+      <tr><th>Requirement</th><th>Version</th><th>Download</th></tr>
+      <tr><td>🐍 Python</td><td>3.9 or higher</td><td><a href="https://python.org/downloads">python.org/downloads</a></td></tr>
+      <tr><td>📦 pip</td><td>comes with Python</td><td>Included automatically</td></tr>
+      <tr><td>🔑 Gemini API Key</td><td>Free tier</td><td><a href="https://aistudio.google.com/app/apikey">aistudio.google.com/app/apikey</a></td></tr>
+      <tr><td>💻 Terminal / CMD</td><td>Any</td><td>Built into your OS</td></tr>
+    </table>
+    <div class="info-box info-indigo" style="margin-top:12px">💡 The Gemini free tier gives you <strong>1,000,000 tokens/month</strong> and <strong>15 requests/minute</strong> — completely free, no credit card required.</div>
+  </div>
+</div>
+
+<!-- Step 1: Get API Key -->
+<div class="section">
+  <div class="section-title"><span class="num">1</span> Get Your Free Gemini API Key</div>
+  <div class="card card-highlight">
+    <div class="steps-list">
+      <div class="step-item">
+        <div class="step-circle">1</div>
+        <div class="step-text">Go to <a href="https://aistudio.google.com/app/apikey" target="_blank"><strong>aistudio.google.com/app/apikey</strong></a></div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle">2</div>
+        <div class="step-text">Sign in with your <strong>Google account</strong> (Gmail, G-Suite, etc.)</div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle">3</div>
+        <div class="step-text">Click <strong>"Create API Key"</strong> → Select or create a project</div>
+      </div>
+      <div class="step-item">
+        <div class="step-circle">4</div>
+        <div class="step-text">Copy the key — it looks like: <code>AIzaSyD...xxxxxxxxxxx</code></div>
+      </div>
+    </div>
+    <div class="info-box info-green" style="margin-top:14px">✅ Keep your API key safe. Never share it publicly or commit it to Git.</div>
+  </div>
+</div>
+
+<!-- Step 2: Extract Project -->
+<div class="section">
+  <div class="section-title"><span class="num">2</span> Extract the Project</div>
+  <div class="card">
+    <p style="color:var(--txt2);margin-bottom:14px">Extract the <strong>neurtutor_ai_complete.zip</strong> file you downloaded, then navigate to the folder:</p>
+
+    <div class="os-tabs">
+      <button class="os-tab on" onclick="switchOS('win',this)">🪟 Windows</button>
+      <button class="os-tab" onclick="switchOS('mac',this)">🍎 Mac</button>
+      <button class="os-tab" onclick="switchOS('linux',this)">🐧 Linux</button>
+    </div>
+
+    <div class="os-panel on" id="os-win">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Right-click the zip → Extract All
+# Then open Command Prompt (Win+R → type "cmd") and run:</span>
+
+cd Downloads\neurtutor
+<span class="cm"># or wherever you extracted it</span></pre></div>
+    </div>
+    <div class="os-panel" id="os-mac">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Double-click the zip to extract, then:</span>
+
+cd ~/Downloads/neurtutor</pre></div>
+    </div>
+    <div class="os-panel" id="os-linux">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># In terminal:</span>
+
+unzip neurtutor_ai_complete.zip
+cd neurtutor</pre></div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 3: Create Virtual Environment -->
+<div class="section">
+  <div class="section-title"><span class="num">3</span> Set Up Python Environment</div>
+  <div class="card">
+    <p style="color:var(--txt2);margin-bottom:14px">Create an isolated Python environment so packages don't conflict with other projects:</p>
+
+    <div class="os-tabs">
+      <button class="os-tab on" onclick="switchOS2('win',this)">🪟 Windows</button>
+      <button class="os-tab" onclick="switchOS2('mac',this)">🍎 Mac / Linux</button>
+    </div>
+
+    <div class="os-panel on" id="os2-win">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Create virtual environment</span>
+python -m venv venv
+
+<span class="cm"># Activate it (you'll see "(venv)" in your prompt)</span>
+venv\Scripts\activate
+
+<span class="cm"># Install all dependencies</span>
+pip install -r requirements.txt</pre></div>
+    </div>
+    <div class="os-panel" id="os2-mac">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Create virtual environment</span>
+python3 -m venv venv
+
+<span class="cm"># Activate it (you'll see "(venv)" in your prompt)</span>
+source venv/bin/activate
+
+<span class="cm"># Install all dependencies</span>
+pip install -r requirements.txt</pre></div>
+    </div>
+
+    <div class="info-box info-amber" style="margin-top:12px">⏳ Installation takes 2–5 minutes. You'll see packages downloading — this is normal.</div>
+  </div>
+</div>
+
+<!-- Step 4: Configure API Key -->
+<div class="section">
+  <div class="section-title"><span class="num">4</span> Add Your Gemini API Key</div>
+  <div class="card">
+    <p style="color:var(--txt2);margin-bottom:14px">Open the <code style="background:rgba(79,70,229,.15);color:var(--neon);padding:2px 8px;border-radius:5px;font-family:monospace">.env</code> file in the project folder and paste your API key:</p>
+
+    <div class="os-tabs">
+      <button class="os-tab on" onclick="switchOS3('win',this)">🪟 Windows</button>
+      <button class="os-tab" onclick="switchOS3('mac',this)">🍎 Mac</button>
+      <button class="os-tab" onclick="switchOS3('linux',this)">🐧 Linux</button>
+    </div>
+
+    <div class="os-panel on" id="os3-win">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Open in Notepad</span>
+notepad .env</pre></div>
+    </div>
+    <div class="os-panel" id="os3-mac">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Open in TextEdit</span>
+open -e .env
+<span class="cm"># OR use nano in terminal:</span>
+nano .env</pre></div>
+    </div>
+    <div class="os-panel" id="os3-linux">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Use nano or any text editor</span>
+nano .env</pre></div>
+    </div>
+
+    <p style="color:var(--txt2);margin:14px 0 10px">Change this line in <code style="background:rgba(79,70,229,.15);color:var(--neon);padding:2px 7px;border-radius:4px;font-family:monospace">.env</code>:</p>
+    <div class="code"><pre><span class="cm"># BEFORE (placeholder):</span>
+<span class="hi">GEMINI_API_KEY=your_gemini_api_key_here</span>
+
+<span class="cm"># AFTER (your real key):</span>
+<span class="co">GEMINI_API_KEY=AIzaSyD_your_actual_key_here</span>
+
+<span class="cm"># Choose your model (gemini-1.5-flash is fast & free):</span>
+<span class="co">GEMINI_MODEL=gemini-1.5-flash</span></pre></div>
+
+    <div class="info-box info-rose" style="margin-top:12px">⚠️ The <strong>.env</strong> file might be hidden on Mac/Linux. Press <strong>Cmd+Shift+.</strong> (Mac) or use <code>nano .env</code> in terminal to see it.</div>
+  </div>
+</div>
+
+<!-- Step 5: Run the Server -->
+<div class="section">
+  <div class="section-title"><span class="num">5</span> Start the Server</div>
+  <div class="card card-emerald">
+    <div class="os-tabs">
+      <button class="os-tab on" onclick="switchOS4('win',this)">🪟 Windows</button>
+      <button class="os-tab" onclick="switchOS4('mac',this)">🍎 Mac / Linux</button>
+    </div>
+    <div class="os-panel on" id="os4-win">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Make sure venv is active (you see "(venv)" in prompt)</span>
+venv\Scripts\activate
+
+<span class="cm"># Start NeuroTutor AI</span>
+python app.py</pre></div>
+    </div>
+    <div class="os-panel" id="os4-mac">
+      <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy</button><pre><span class="cm"># Make sure venv is active</span>
+source venv/bin/activate
+
+<span class="cm"># Start NeuroTutor AI</span>
+python app.py</pre></div>
+    </div>
+
+    <p style="color:var(--txt2);margin:14px 0 10px">You'll see this output when running successfully:</p>
+    <div class="code"><pre><span class="co">╔══════════════════════════════════════╗
+║   🧠 NeuroTutor AI is running!       ║
+║   🌐 http://localhost:5000           ║
+║   📖 Ctrl+C to stop                  ║
+╚══════════════════════════════════════╝</span>
+
+<span class="kw">✅ TutorAgent: LangGraph + Gemini (gemini-1.5-flash)</span>
+<span class="st">✅ Database initialized</span>
+<span class="cm"> * Running on http://0.0.0.0:5000</span></pre></div>
+  </div>
+</div>
+
+<!-- Step 6: Open Browser -->
+<div class="section">
+  <div class="section-title"><span class="num">6</span> Open in Browser</div>
+  <div class="card card-highlight">
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-size:48px;margin-bottom:14px">🌐</div>
+      <p style="font-size:18px;margin-bottom:8px">Open your browser and go to:</p>
+      <div style="display:inline-block;background:rgba(79,70,229,.15);border:2px solid rgba(79,70,229,.4);border-radius:12px;padding:12px 32px;font-family:monospace;font-size:22px;font-weight:800;color:var(--neon);margin-bottom:14px">
+        http://localhost:5000
+      </div>
+      <p style="color:var(--txt2);font-size:14px">Register a student account → Log in → Start learning with Gemini AI!</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Model Comparison -->
+<div class="section">
+  <div class="section-title">🤖 Which Gemini Model to Use?</div>
+  <div class="card">
+    <table>
+      <tr><th>Model</th><th>Speed</th><th>Quality</th><th>Free Limit</th><th>Best For</th></tr>
+      <tr>
+        <td>gemini-1.5-flash <span class="badge badge-green">Recommended</span></td>
+        <td>⚡ Very Fast</td><td>⭐⭐⭐⭐</td>
+        <td>15 req/min · 1M tok/day</td>
+        <td>Daily tutoring, quizzes, plans</td>
+      </tr>
+      <tr>
+        <td>gemini-1.5-pro</td>
+        <td>🐢 Slower</td><td>⭐⭐⭐⭐⭐</td>
+        <td>2 req/min · 50K tok/day</td>
+        <td>Complex explanations, research</td>
+      </tr>
+      <tr>
+        <td>gemini-2.0-flash</td>
+        <td>⚡⚡ Fastest</td><td>⭐⭐⭐⭐⭐</td>
+        <td>15 req/min · 1M tok/day</td>
+        <td>Latest, best balance of speed+quality</td>
+      </tr>
+    </table>
+    <div class="info-box info-indigo" style="margin-top:12px">
+      💡 Change model anytime in <code>.env</code>: <code>GEMINI_MODEL=gemini-2.0-flash</code> — no code changes needed!
+    </div>
+  </div>
+</div>
+
+<!-- Architecture -->
+<div class="section">
+  <div class="section-title">🏗️ System Architecture</div>
+  <div class="card">
+    <div class="arch">
+<pre>
+<span class="box">Student Question</span>
+        ↓
+<span class="box">┌─────────────────────────────────────────────────────┐</span>
+<span class="box">│          LangGraph 5-Agent Pipeline                  │</span>
+<span class="box">├─────────────────────────────────────────────────────┤</span>
+<span class="box">│  Node 1: classify_intent</span>   <span class="label">← rule-based, instant</span>
+<span class="arrow">│      ↓</span>
+<span class="box">│  Node 2: retrieve_knowledge</span> <span class="label">← subject-aware context</span>
+<span class="arrow">│      ↓</span>
+<span class="box">│  Node 3: map_curriculum</span>     <span class="label">← learning path planner</span>
+<span class="arrow">│      ↓</span>
+<span class="box">│  Node 4: generate_response</span>  <span class="label">← Google Gemini AI call</span>
+<span class="arrow">│      ↓</span>
+<span class="box">│  Node 5: quality_check</span>      <span class="label">← validate + extract follow-ups</span>
+<span class="box">└─────────────────────────────────────────────────────┘</span>
+        ↓
+<span class="box">Personalized Response</span> + Agent Steps + Resources + Follow-up Questions
+</pre>
+    </div>
+  </div>
+</div>
+
+<!-- Features quick ref -->
+<div class="section">
+  <div class="section-title">✨ Features Quick Reference</div>
+  <div class="card">
+    <table>
+      <tr><th>Feature</th><th>How to Use</th></tr>
+      <tr><td>🤖 AI Tutor Chat</td><td>Click "AI Tutor" → type any question → choose mode (Tutor/Socratic/Exam/Creative/Debug)</td></tr>
+      <tr><td>🧠 Smart Quiz</td><td>Click "Smart Quiz" → pick subject + difficulty → Gemini generates fresh questions</td></tr>
+      <tr><td>🗺 Study Plans</td><td>Click "Study Plans" → set goal + deadline → Gemini builds week-by-week roadmap</td></tr>
+      <tr><td>📊 Analytics</td><td>Click "Analytics" → see score trends, subject heatmap, AI recommendations</td></tr>
+      <tr><td>📝 Notes</td><td>Click "Notes" → save key concepts from sessions (markdown supported)</td></tr>
+      <tr><td>🏆 Leaderboard</td><td>Click "Leaderboard" → see top students ranked by XP</td></tr>
+      <tr><td>⚡ XP System</td><td>Earn +10 XP per question, +2×score% per quiz → Level up every 500 XP</td></tr>
+      <tr><td>🏅 Achievements</td><td>Auto-unlocked: first quiz, perfect score, streaks, levels, multi-subject mastery</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="section">
+  <div class="section-title">🔧 Troubleshooting</div>
+
+  <div class="trouble-item">
+    <div class="trouble-q">❌ "ModuleNotFoundError: No module named 'flask'"</div>
+    <div class="trouble-a">Virtual environment not activated. Run: <code>source venv/bin/activate</code> (Mac/Linux) or <code>venv\Scripts\activate</code> (Windows), then <code>pip install -r requirements.txt</code></div>
+  </div>
+
+  <div class="trouble-item">
+    <div class="trouble-q">❌ "Running in demo mode" / no AI responses</div>
+    <div class="trouble-a">API key missing or incorrect. Check your <code>.env</code> file has <code>GEMINI_API_KEY=AIza...</code> (not the placeholder). Restart the server after editing.</div>
+  </div>
+
+  <div class="trouble-item">
+    <div class="trouble-q">❌ "Port 5000 already in use"</div>
+    <div class="trouble-a">Another app is using port 5000. Change <code>PORT=5001</code> in <code>.env</code>, then open <code>http://localhost:5001</code></div>
+  </div>
+
+  <div class="trouble-item">
+    <div class="trouble-q">❌ "ModuleNotFoundError: No module named 'langgraph'"</div>
+    <div class="trouble-a">Run: <code>pip install langgraph langchain-google-genai google-generativeai</code></div>
+  </div>
+
+  <div class="trouble-item">
+    <div class="trouble-q">❌ Database errors / login fails</div>
+    <div class="trouble-a">Delete <code>neurtutor.db</code> and restart. The database recreates itself automatically: <code>del neurtutor.db</code> (Windows) or <code>rm neurtutor.db</code> (Mac/Linux)</div>
+  </div>
+
+  <div class="trouble-item">
+    <div class="trouble-q">❌ Gemini "RESOURCE_EXHAUSTED" error</div>
+    <div class="trouble-a">You hit the free rate limit (15 req/min). Wait 1 minute and try again, or switch to <code>GEMINI_MODEL=gemini-1.5-pro</code> for a different quota bucket.</div>
+  </div>
+
+  <div class="trouble-item">
+    <div class="trouble-q">❌ ".env file not found" or hidden on Mac</div>
+    <div class="trouble-a">Press <code>Cmd+Shift+.</code> in Finder to show hidden files. Or use terminal: <code>nano .env</code></div>
+  </div>
+</div>
+
+<!-- Quick Commands -->
+<div class="section">
+  <div class="section-title">⚡ Quick Reference Commands</div>
+  <div class="card">
+    <div class="code"><button class="copy-btn" onclick="copyCode(this)">Copy All</button><pre><span class="cm"># ── Every time you want to run NeuroTutor ──────────────────</span>
+cd neurtutor                         <span class="cm"># go to project folder</span>
+source venv/bin/activate             <span class="cm"># activate Python env (Mac/Linux)</span>
+<span class="cm"># OR: venv\Scripts\activate          # activate (Windows)</span>
+python app.py                        <span class="cm"># start server</span>
+<span class="cm"># Open: http://localhost:5000</span>
+
+<span class="cm"># ── To stop the server ─────────────────────────────────────</span>
+Ctrl+C
+
+<span class="cm"># ── To update packages ─────────────────────────────────────</span>
+pip install -r requirements.txt
+
+<span class="cm"># ── Change Gemini model (edit .env) ────────────────────────</span>
+GEMINI_MODEL=gemini-2.0-flash       <span class="cm"># latest + fastest</span>
+GEMINI_MODEL=gemini-1.5-flash       <span class="cm"># recommended (free)</span>
+GEMINI_MODEL=gemini-1.5-pro         <span class="cm"># higher quality</span></pre></div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;padding:32px 0;color:var(--txt3);border-top:1px solid var(--bd);margin-top:40px">
+  <p style="font-size:15px;margin-bottom:6px">🧠 <strong style="color:var(--txt)">NeuroTutor AI</strong> — Advanced Agentic AI Tutoring System</p>
+  <p style="font-size:13px">Built with LangGraph · LangChain · Google Gemini · Flask · SQLAlchemy</p>
+  <p style="margin-top:12px"><a href="https://aistudio.google.com/app/apikey">Get Gemini API Key</a> · <a href="http://localhost:5000">Open App</a></p>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+function switchOS(os, btn) {
+  document.querySelectorAll('#os-win,#os-mac,#os-linux').forEach(p=>p.classList.remove('on'));
+  document.getElementById('os-'+os).classList.add('on');
+  btn.closest('.card').querySelectorAll('.os-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+}
+function switchOS2(os, btn) {
+  document.querySelectorAll('#os2-win,#os2-mac').forEach(p=>p.classList.remove('on'));
+  document.getElementById('os2-'+os).classList.add('on');
+  btn.closest('.card').querySelectorAll('.os-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+}
+function switchOS3(os, btn) {
+  document.querySelectorAll('#os3-win,#os3-mac,#os3-linux').forEach(p=>p.classList.remove('on'));
+  document.getElementById('os3-'+os).classList.add('on');
+  btn.closest('.card').querySelectorAll('.os-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+}
+function switchOS4(os, btn) {
+  document.querySelectorAll('#os4-win,#os4-mac').forEach(p=>p.classList.remove('on'));
+  document.getElementById('os4-'+os).classList.add('on');
+  btn.closest('.card').querySelectorAll('.os-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+}
+function copyCode(btn) {
+  const code = btn.nextElementSibling.querySelector('pre').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✅ Copied!'; btn.classList.add('done');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

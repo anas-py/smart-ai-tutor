@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Notes — NeuroTutor{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div class="page-hdr-row">
+    <div><h1>📝 My Notes</h1><p class="text-muted">Capture key concepts and insights from your sessions</p></div>
+    <button class="btn btn-primary" onclick="openNew()">+ New Note</button>
+  </div>
+</div>
+{% if notes %}
+<div class="grid cols-auto">
+  {% for n in notes %}
+  <div class="card" style="position:relative;cursor:pointer" onclick="editNote({{ n.id }},'{{ n.title|e }}')">
+    {% if n.is_pinned %}<div style="position:absolute;top:12px;right:12px;font-size:14px">📌</div>{% endif %}
+    <div class="flex gap-2 mb-2">
+      <span class="badge badge-indigo">{{ n.subject }}</span>
+    </div>
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:6px">{{ n.title }}</h3>
+    <p class="text-sm text-muted">{{ n.content[:120] if n.content else 'Empty note' }}…</p>
+    <div class="text-xs text-dim mt-3">{{ n.created_at.strftime('%d %b %Y') }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:70px;color:var(--txt3)">
+  <div style="font-size:50px;margin-bottom:16px">📝</div>
+  <h2 style="font-family:'Clash Display',sans-serif;margin-bottom:10px">No Notes Yet</h2>
+  <p style="margin-bottom:20px">Capture what you learn in AI sessions</p>
+  <button class="btn btn-primary" onclick="openNew()">+ Create First Note</button>
+</div>
+{% endif %}
+
+<div id="noteModal" class="modal-overlay hidden">
+  <div class="modal-box wide">
+    <button class="modal-close" onclick="closeNote()">×</button>
+    <h3 style="font-family:'Clash Display',sans-serif;font-size:20px;margin-bottom:18px" id="noteModalTitle">New Note</h3>
+    <input type="hidden" id="noteId" value="">
+    <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="noteTitle" placeholder="Note title…"></div>
+    <div class="form-group"><label class="form-label">Subject</label>
+      <select class="form-select" id="noteSubj"><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>Computer Science</option><option>General</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Content</label>
+      <textarea class="form-textarea" id="noteContent" rows="8" placeholder="Write your notes here… Markdown supported"></textarea>
+    </div>
+    <div class="flex gap-3">
+      <button class="btn btn-primary" onclick="saveNote()">💾 Save Note</button>
+      <button class="btn btn-danger" id="delBtn" onclick="deleteNote()" style="display:none">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function openNew(){
+  document.getElementById('noteId').value='';
+  document.getElementById('noteTitle').value='';
+  document.getElementById('noteContent').value='';
+  document.getElementById('noteModalTitle').textContent='New Note';
+  document.getElementById('delBtn').style.display='none';
+  document.getElementById('noteModal').classList.remove('hidden');
+}
+function editNote(id,title){
+  document.getElementById('noteId').value=id;
+  document.getElementById('noteModalTitle').textContent='Edit: '+title;
+  document.getElementById('delBtn').style.display='';
+  document.getElementById('noteModal').classList.remove('hidden');
+}
+function closeNote(){document.getElementById('noteModal').classList.add('hidden');}
+async function saveNote(){
+  const id=document.getElementById('noteId').value;
+  const data={title:document.getElementById('noteTitle').value,content:document.getElementById('noteContent').value,subject:document.getElementById('noteSubj').value};
+  try{
+    if(id){await API.put(`/api/notes/${id}`,data);}
+    else{await API.post('/api/notes',data);}
+    Toast.success('Note saved!');closeNote();setTimeout(()=>location.reload(),800);
+  }catch(e){Toast.error(e.message);}
+}
+async function deleteNote(){
+  const id=document.getElementById('noteId').value;
+  if(!id)return;
+  if(!confirm('Delete this note?'))return;
+  await API.del(`/api/notes/${id}`);
+  Toast.info('Note deleted');closeNote();setTimeout(()=>location.reload(),800);
+}
+</script>
+{% endblock %}

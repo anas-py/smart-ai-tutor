@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — NeuroTutor AI{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div class="page-hdr-row">
+    <div>
+      <h1>Good {% if now.hour < 12 %}morning{% elif now.hour < 17 %}afternoon{% else %}evening{% endif %}, {{ user.display_name }}! {{ user.avatar }}</h1>
+      <p class="text-muted">Your learning command center — Level {{ user.level }} Scholar</p>
+    </div>
+    <a href="{{ url_for('tutor') }}" class="btn btn-primary btn-lg">🤖 Start AI Session</a>
+  </div>
+</div>
+
+<!-- XP Progress Banner -->
+<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(79,70,229,.12),rgba(109,40,217,.06));border-color:rgba(79,70,229,.25)">
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <div style="font-size:32px">{{ user.avatar }}</div>
+      <div>
+        <div style="font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700">Level {{ user.level }}</div>
+        <div class="text-sm text-muted">{{ user.xp_points % 500 }} / 500 XP to Level {{ user.level + 1 }}</div>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <span class="badge badge-indigo">⚡ {{ user.xp_points }} Total XP</span>
+      <span class="badge badge-amber">🔥 {{ user.streak_days }} Day Streak</span>
+    </div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill prog-indigo" style="width:{{ user.get_xp_progress()|round(1) }}%"></div>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="grid cols-4 mb-6">
+  <div class="card fade-up">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(79,70,229,.15)">💬</div>
+      <div>
+        <div class="stat-val">{{ user.total_questions }}</div>
+        <div class="stat-lbl">Questions Asked</div>
+      </div>
+    </div>
+  </div>
+  <div class="card fade-up-2">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(245,158,11,.15)">📝</div>
+      <div>
+        <div class="stat-val">{{ user.total_quiz_taken }}</div>
+        <div class="stat-lbl">Quizzes Taken</div>
+      </div>
+    </div>
+  </div>
+  <div class="card fade-up-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(16,185,129,.15)">🏅</div>
+      <div>
+        <div class="stat-val">{{ total_ach }}</div>
+        <div class="stat-lbl">Achievements</div>
+      </div>
+    </div>
+  </div>
+  <div class="card fade-up-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(6,182,212,.15)">📚</div>
+      <div>
+        <div class="stat-val">{{ user.total_sessions }}</div>
+        <div class="stat-lbl">AI Sessions</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions + Achievements -->
+<div class="grid cols-2 mb-6">
+  <!-- Quick Actions -->
+  <div class="card fade-up-2">
+    <h3 style="font-family:'Clash Display',sans-serif;font-size:18px;margin-bottom:16px">⚡ Quick Actions</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a href="{{ url_for('tutor') }}" class="btn btn-primary btn-full" style="justify-content:flex-start;padding:13px 16px">
+        🤖 <span>AI Tutor Chat</span>
+        <span class="badge badge-indigo" style="margin-left:auto">Multi-Agent</span>
+      </a>
+      <a href="{{ url_for('tutor') }}?mode=socratic" class="btn btn-secondary btn-full" style="justify-content:flex-start;padding:13px 16px">
+        🤔 <span>Socratic Mode</span>
+        <span class="badge badge-cyan" style="margin-left:auto">Discover</span>
+      </a>
+      <a href="{{ url_for('quiz') }}" class="btn btn-secondary btn-full" style="justify-content:flex-start;padding:13px 16px">
+        🧠 <span>Take a Smart Quiz</span>
+        <span class="badge badge-amber" style="margin-left:auto">Adaptive</span>
+      </a>
+      <a href="{{ url_for('study_plans') }}" class="btn btn-ghost btn-full" style="justify-content:flex-start;padding:13px 16px">
+        🗺 <span>Create Study Plan</span>
+      </a>
+      <a href="{{ url_for('analytics') }}" class="btn btn-ghost btn-full" style="justify-content:flex-start;padding:13px 16px">
+        📊 <span>View Analytics</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Achievements -->
+  <div class="card fade-up-3">
+    <div class="flex items-center justify-between mb-4">
+      <h3 style="font-family:'Clash Display',sans-serif;font-size:18px">🏅 Achievements</h3>
+      <a href="{{ url_for('profile') }}" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    {% if recent_ach %}
+      <div style="display:flex;flex-direction:column;gap:8px">
+        {% for ach in recent_ach %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--ink2);border-radius:10px;border:1px solid var(--border)">
+          <span style="font-size:22px;flex-shrink:0">{{ ach.icon }}</span>
+          <div style="flex:1;min-width:0">
+            <div class="fw-600 text-sm truncate">{{ ach.title }}</div>
+            <div class="text-xs text-dim">{{ ach.description }}</div>
+          </div>
+          <span class="badge badge-amber">+{{ ach.xp_value }} XP</span>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center;padding:32px 0;color:var(--txt3)">
+        <div style="font-size:36px;margin-bottom:12px">🎯</div>
+        <p class="text-sm">Start learning to unlock achievements!</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Sessions + Quiz History -->
+<div class="grid cols-2">
+  <div class="card fade-up">
+    <div class="flex items-center justify-between mb-4">
+      <h3 style="font-family:'Clash Display',sans-serif;font-size:18px">📚 Recent Sessions</h3>
+      <a href="{{ url_for('tutor') }}" class="btn btn-ghost btn-sm">New +</a>
+    </div>
+    {% if recent_sessions %}
+      <div style="display:flex;flex-direction:column;gap:8px">
+        {% for s in recent_sessions %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--ink2);border-radius:10px;border:1px solid var(--border)">
+          <div>
+            <div class="fw-600 text-sm">{{ s.subject }}</div>
+            <div class="text-xs text-dim">{{ s.started_at | timeago }}</div>
+          </div>
+          <div class="flex gap-2">
+            <span class="badge badge-indigo">{{ s.agent_mode }}</span>
+            {% if s.msg_count %}
+            <span class="text-xs text-dim">{{ s.msg_count }} msgs</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center;padding:32px 0;color:var(--txt3)">
+        <div style="font-size:36px;margin-bottom:12px">🤖</div>
+        <p class="text-sm">No sessions yet. <a href="{{ url_for('tutor') }}" style="color:var(--electric)">Start one!</a></p>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card fade-up-2">
+    <div class="flex items-center justify-between mb-4">
+      <h3 style="font-family:'Clash Display',sans-serif;font-size:18px">📊 Quiz History</h3>
+      <a href="{{ url_for('quiz') }}" class="btn btn-ghost btn-sm">Take Quiz</a>
+    </div>
+    {% if recent_quiz %}
+      <div style="display:flex;flex-direction:column;gap:8px">
+        {% for qr in recent_quiz %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--ink2);border-radius:10px;border:1px solid var(--border)">
+          <div>
+            <div class="fw-600 text-sm">{{ qr.subject or 'Quiz' }}</div>
+            <div class="text-xs text-dim">{{ qr.correct_answers }}/{{ qr.total_questions }} correct · {{ qr.taken_at | timeago }}</div>
+          </div>
+          <span class="badge {{ 'badge-emerald' if qr.score >= 70 else 'badge-rose' }}">
+            {{ qr.grade }} · {{ qr.score|round|int }}%
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center;padding:32px 0;color:var(--txt3)">
+        <div style="font-size:36px;margin-bottom:12px">📝</div>
+        <p class="text-sm">No quizzes yet. <a href="{{ url_for('quiz') }}" style="color:var(--electric)">Take one!</a></p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Inject current time for greeting
+const now = new Date();
+document.querySelectorAll('[data-xp]').forEach(el => el.textContent = {{ user.xp_points }});
+</script>
+{% endblock %}

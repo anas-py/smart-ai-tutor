@@ -1,0 +1,75 @@
+{% extends "auth/auth_base.html" %}
+{% block title %}Log In — Smart AI Tutor{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+
+  <!-- Logo -->
+  <a href="/" class="auth-logo">
+    <div class="auth-logo-gem">🧠</div>
+    <span class="auth-logo-name">Smart AI Tutor</span>
+  </a>
+
+  <!-- Heading -->
+  <h1 style="font-family:'Clash Display',sans-serif;font-size:26px;font-weight:700;
+              color:var(--txt,#e2e8f0);text-align:center;margin-bottom:6px">
+    Welcome Back
+  </h1>
+  <p style="text-align:center;font-size:14px;color:var(--txt2,#94a3b8);margin-bottom:28px">
+    Log in to continue your learning journey
+  </p>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div style="padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:13px;
+          background:{% if category=='error' %}rgba(244,63,94,.12){% else %}rgba(16,185,129,.12){% endif %};
+          border:1px solid {% if category=='error' %}rgba(244,63,94,.3){% else %}rgba(16,185,129,.3){% endif %};
+          color:{% if category=='error' %}#fb7185{% else %}#34d399{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Login Form -->
+  <form method="POST" action="{{ url_for('login_page') }}">
+
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" name="email" class="form-input"
+             placeholder="you@example.com" required autocomplete="email">
+    </div>
+
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Password</label>
+      <input type="password" name="password" class="form-input"
+             placeholder="Enter your password" required autocomplete="current-password">
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-full"
+            style="margin-top:24px;padding:12px;font-size:15px;font-weight:700;border-radius:10px">
+      Log In →
+    </button>
+
+  </form>
+
+  <!-- Divider -->
+  <div style="display:flex;align-items:center;gap:10px;margin:20px 0">
+    <div style="flex:1;height:1px;background:var(--border,rgba(255,255,255,.08))"></div>
+    <span style="font-size:12px;color:var(--txt3,#475569)">OR</span>
+    <div style="flex:1;height:1px;background:var(--border,rgba(255,255,255,.08))"></div>
+  </div>
+
+  <!-- Register link -->
+  <p style="text-align:center;font-size:14px;color:var(--txt2,#94a3b8)">
+    Don't have an account?
+    <a href="{{ url_for('register_page') }}"
+       style="color:#4f46e5;font-weight:600;text-decoration:none">
+      Create one free →
+    </a>
+  </p>
+
+</div>
+{% endblock %}

@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block title %}AI Tutor — NeuroTutor{% endblock %}
+{% block extra_head %}
+<style>
+.tutor-wrap   { display:grid; grid-template-columns:1fr 300px; gap:18px; height:calc(100vh - 130px); }
+.chat-panel   { display:flex; flex-direction:column; background:var(--ink3); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; }
+.chat-topbar  { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0; }
+.mode-pills   { display:flex; gap:5px; flex-wrap:wrap; }
+.mode-pill    { padding:5px 11px; border-radius:20px; border:1.5px solid var(--border); background:transparent; font-size:12px; font-weight:700; cursor:pointer; color:var(--txt2); font-family:'Instrument Sans',sans-serif; transition:all .15s; }
+.mode-pill.on { border-color:var(--indigo); background:rgba(79,70,229,.12); color:var(--neon); }
+.chat-msgs    { flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:14px; }
+.msg          { display:flex; gap:10px; max-width:88%; animation:msgIn .3s cubic-bezier(.4,0,.2,1); }
+.msg.user     { align-self:flex-end; flex-direction:row-reverse; }
+.msg-av       { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.av-ai        { background:linear-gradient(135deg,#4f46e5,#6d28d9); box-shadow:0 0 12px rgba(79,70,229,.3); }
+.av-usr       { background:var(--ink4); border:1px solid var(--border2); }
+.msg-body     { flex:1; min-width:0; }
+.bubble       { padding:12px 15px; border-radius:14px; font-size:14px; line-height:1.7; }
+.bubble-ai    { background:var(--ink4); border:1px solid var(--border); border-bottom-left-radius:4px; }
+.bubble-usr   { background:linear-gradient(135deg,#4f46e5,#6d28d9); color:#fff; border-bottom-right-radius:4px; }
+.msg-meta     { font-size:11px; color:var(--txt3); margin-top:4px; }
+.user .msg-meta { text-align:right; }
+.typing-bub   { display:flex; align-items:center; gap:5px; padding:12px 15px; background:var(--ink4); border:1px solid var(--border); border-radius:14px; border-bottom-left-radius:4px; }
+.dot          { width:7px; height:7px; border-radius:50%; background:var(--electric); animation:typingPop 1.2s infinite; }
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes typingPop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.chat-footer  { padding:14px 18px; border-top:1px solid var(--border); background:var(--ink2); flex-shrink:0; }
+.input-row    { display:flex; gap:8px; align-items:flex-end; }
+.chat-ta      { flex:1; background:var(--ink3); border:1.5px solid var(--border); border-radius:12px; padding:11px 14px; color:var(--txt); font-family:'Instrument Sans',sans-serif; font-size:14px; outline:none; resize:none; min-height:44px; max-height:120px; transition:border-color .15s,box-shadow .15s; }
+.chat-ta:focus{ border-color:var(--indigo); box-shadow:0 0 0 3px rgba(79,70,229,.12); }
+.send-btn     { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#4f46e5,#6d28d9); border:none; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; transition:all .18s; box-shadow:0 3px 12px rgba(79,70,229,.3); }
+.send-btn:hover{ transform:translateY(-2px); box-shadow:0 7px 20px rgba(79,70,229,.45); }
+.send-btn:disabled{ opacity:.5; transform:none; cursor:not-allowed; }
+/* Side panel */
+.side-wrap    { display:flex; flex-direction:column; gap:14px; overflow-y:auto; }
+.side-card    { background:var(--ink3); border:1px solid var(--border); border-radius:var(--r-md); padding:16px; flex-shrink:0; }
+.side-title   { font-family:'Clash Display',sans-serif; font-size:14px; font-weight:600; margin-bottom:12px; }
+.qprompt      { width:100%; text-align:left; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--ink2); color:var(--txt2); font-family:'Instrument Sans',sans-serif; font-size:12px; cursor:pointer; transition:all .15s; margin-bottom:5px; display:block; }
+.qprompt:hover{ border-color:var(--indigo); color:var(--electric); }
+.agent-step   { display:flex; align-items:flex-start; gap:7px; padding:5px 0; font-size:12px; color:var(--txt2); }
+.step-dot-sm  { width:6px; height:6px; border-radius:50%; background:var(--electric); flex-shrink:0; margin-top:5px; }
+/* Markdown in bubbles */
+.bubble-ai h1,.bubble-ai h2,.bubble-ai h3{font-family:'Clash Display',sans-serif;margin:12px 0 6px;color:var(--txt)}
+.bubble-ai h1{font-size:17px}.bubble-ai h2{font-size:16px}.bubble-ai h3{font-size:15px}
+.bubble-ai p{margin-bottom:7px}
+.bubble-ai ul,.bubble-ai ol{padding-left:18px;margin-bottom:8px}
+.bubble-ai li{margin-bottom:3px}
+.bubble-ai strong{font-weight:700;color:#e2e8f0}
+.bubble-ai em{color:#cbd5e1}
+.bubble-ai blockquote{border-left:3px solid var(--indigo);padding-left:12px;color:var(--txt2);font-style:italic;margin:8px 0}
+.bubble-ai hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.resource-link{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--ink2);border-radius:8px;border:1px solid var(--border);text-decoration:none;color:var(--txt2);font-size:12px;transition:all .15s;margin-bottom:5px}
+.resource-link:hover{border-color:var(--indigo);color:var(--electric)}
+@media(max-width:900px){.tutor-wrap{grid-template-columns:1fr}.side-wrap{display:none}}
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="page-hdr" style="margin-bottom:14px">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 style="font-size:22px">🤖 AI Tutor — <span style="color:var(--electric)" id="subjectLabel">{{ subject }}</span></h1>
+      <p class="text-muted text-sm">Multi-agent pipeline: LangGraph + Claude AI</p>
+    </div>
+    <div class="flex gap-2 items-center">
+      <select class="form-select" id="subjectSel" style="width:160px;padding:8px 12px;font-size:13px" onchange="updateSubject()">
+        {% for s in ['Mathematics','Physics','Chemistry','Biology','Computer Science','History','Literature','Geography','Economics','General'] %}
+        <option {{ 'selected' if s == subject }}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <div class="dot-live" title="AI Online"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tutor-wrap">
+  <!-- Chat -->
+  <div class="chat-panel">
+    <!-- Mode tabs -->
+    <div class="chat-topbar">
+      <div class="mode-pills">
+        <button class="mode-pill on" data-mode="tutor"    onclick="setMode(this)">📖 Tutor</button>
+        <button class="mode-pill"    data-mode="socratic" onclick="setMode(this)">🤔 Socratic</button>
+        <button class="mode-pill"    data-mode="exam_prep"onclick="setMode(this)">📋 Exam Prep</button>
+        <button class="mode-pill"    data-mode="creative" onclick="setMode(this)">🎨 Creative</button>
+        <button class="mode-pill"    data-mode="debug"    onclick="setMode(this)">🔧 Debug</button>
+      </div>
+      <div class="flex gap-2 items-center">
+        <span class="text-xs text-dim" id="xpLabel">+0 XP session</span>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg">
+        <div class="msg-av av-ai">🧠</div>
+        <div class="msg-body">
+          <div class="bubble bubble-ai">
+            <strong>Hello, {{ user.display_name }}! I'm your NeuroTutor AI.</strong> 👋<br><br>
+            I'm powered by a <strong>5-agent LangGraph pipeline</strong> — I classify your intent, retrieve knowledge, map curriculum, generate a personalized response, then quality-check it all before you see it.<br><br>
+            <strong>Active Mode:</strong> 📖 Tutor | <strong>Subject:</strong> {{ subject }}<br>
+            <strong>Your Style:</strong> {{ user.learning_style|title }} | <strong>Level:</strong> {{ user.grade_level }}<br><br>
+            <em>What would you like to explore today?</em>
+          </div>
+          <div class="msg-meta">NeuroTutor AI · just now</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-footer">
+      <div class="input-row">
+        <textarea class="chat-ta" id="chatInput"
+          placeholder="Ask anything… e.g. 'Explain Newton's laws with a real-world example'"
+          rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMsg()" title="Send">➤</button>
+      </div>
+      <div class="text-xs text-dim mt-2">Enter to send · Shift+Enter for newline · Mode: <span id="modeLabel">Tutor</span></div>
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="side-wrap">
+    <!-- Session stats -->
+    <div class="side-card">
+      <div class="side-title">📊 Session</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div class="flex justify-between text-sm"><span class="text-muted">Messages</span><strong id="msgCnt">0</strong></div>
+        <div class="flex justify-between text-sm"><span class="text-muted">XP Earned</span><strong id="sessionXP" style="color:var(--electric)">0</strong></div>
+        <div class="flex justify-between text-sm"><span class="text-muted">Level</span><strong style="color:var(--amber)">{{ user.level }}</strong></div>
+      </div>
+      <div class="progress-track mt-3">
+        <div class="progress-fill prog-indigo" id="xpBar" style="width:{{ user.get_xp_progress()|round(1) }}%"></div>
+      </div>
+      <div class="text-xs text-dim mt-1">{{ user.xp_points % 500 }}/500 XP → Level {{ user.level+1 }}</div>
+    </div>
+
+    <!-- Quick prompts -->
+    <div class="side-card">
+      <div class="side-title">💡 Quick Prompts</div>
+      <button class="qprompt" onclick="quickSend(this)">Explain this concept simply</button>
+      <button class="qprompt" onclick="quickSend(this)">Give me a practice problem</button>
+      <button class="qprompt" onclick="quickSend(this)">Create a summary table</button>
+      <button class="qprompt" onclick="quickSend(this)">How is this used in real life?</button>
+      <button class="qprompt" onclick="quickSend(this)">What are common mistakes?</button>
+      <button class="qprompt" onclick="quickSend(this)">Explain with a visual diagram</button>
+      <button class="qprompt" onclick="quickSend(this)">Test my understanding</button>
+      <button class="qprompt" onclick="quickSend(this)">What should I study next?</button>
+    </div>
+
+    <!-- Agent steps -->
+    <div class="side-card" id="agentCard" style="display:none">
+      <div class="side-title">🤖 Agent Pipeline</div>
+      <div id="agentSteps"></div>
+    </div>
+
+    <!-- Resources -->
+    <div class="side-card" id="resourceCard" style="display:none">
+      <div class="side-title">📎 Resources</div>
+      <div id="resourceLinks"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const SESSION_ID  = "{{ session_id }}";
+let mode          = 'tutor';
+let sessionXP     = 0;
+let msgCount      = 0;
+let totalXP       = {{ user.xp_points }};
+let level         = {{ user.level }};
+
+const modeNames = {tutor:'Tutor',socratic:'Socratic',exam_prep:'Exam Prep',creative:'Creative',debug:'Debug'};
+
+function setMode(btn) {
+  document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  mode = btn.dataset.mode;
+  document.getElementById('modeLabel').textContent = modeNames[mode];
+}
+
+function updateSubject() {
+  document.getElementById('subjectLabel').textContent = document.getElementById('subjectSel').value;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  autoResize(e.target);
+}
+
+function quickSend(btn) {
+  document.getElementById('chatInput').value = btn.textContent.trim();
+  sendMsg();
+}
+
+function renderMD(text) {
+  return text
+    .replace(/```(\w*)\n?([\s\S]*?)```/g,(_,l,c)=>`<pre class="code-block"><code>${c.replace(/</g,'&lt;').trim()}</code></pre>`)
+    .replace(/`([^`]+)`/g,'<code class="inline-code">$1</code>')
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^#### (.+)$/gm,'<h4>$1</h4>').replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^[\-\*] (.+)$/gm,'<li>$1</li>')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+}
+
+function appendMsg(role, content, agentSteps=[]) {
+  const wrap = document.getElementById('chatMsgs');
+  const div  = document.createElement('div');
+  div.className = `msg${role==='user'?' user':''}`;
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if (role === 'ai') {
+    div.innerHTML = `
+      <div class="msg-av av-ai">🧠</div>
+      <div class="msg-body">
+        <div class="bubble bubble-ai">${renderMD(content)}</div>
+        <div class="msg-meta">NeuroTutor AI · ${time}</div>
+      </div>`;
+  } else {
+    div.innerHTML = `
+      <div class="msg-av av-usr">{{ user.avatar or '🎓' }}</div>
+      <div class="msg-body">
+        <div class="bubble bubble-usr">${content}</div>
+        <div class="msg-meta">${time}</div>
+      </div>`;
+  }
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function addTyping() {
+  const id = 'typing_' + Date.now();
+  const wrap = document.getElementById('chatMsgs');
+  const div  = document.createElement('div');
+  div.id = id; div.className = 'msg';
+  div.innerHTML = `<div class="msg-av av-ai">🧠</div><div class="msg-body"><div class="typing-bub"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="text-xs text-dim" style="margin-left:4px">Agents thinking…</span></div></div>`;
+  wrap.appendChild(div); wrap.scrollTop = wrap.scrollHeight;
+  return id;
+}
+function removeTyping(id) { document.getElementById(id)?.remove(); }
+
+function showAgentSteps(steps) {
+  if (!steps?.length) return;
+  const card = document.getElementById('agentCard');
+  const el   = document.getElementById('agentSteps');
+  card.style.display = 'block';
+  el.innerHTML = steps.map(s =>
+    `<div class="agent-step"><div class="step-dot-sm"></div><span>${s}</span></div>`
+  ).join('');
+}
+
+function showResources(resources) {
+  if (!resources?.length) return;
+  const card = document.getElementById('resourceCard');
+  const el   = document.getElementById('resourceLinks');
+  card.style.display = 'block';
+  el.innerHTML = resources.map(r =>
+    `<a href="${r.url||'#'}" target="_blank" rel="noopener" class="resource-link">
+      <span>${r.type==='video'?'▶':r.type==='tool'?'🔧':r.type==='practice'?'✏':'📎'}</span>
+      <div><div class="fw-600">${r.name}</div><div class="text-xs">${r.desc||''}</div></div>
+    </a>`
+  ).join('');
+}
+
+async function sendMsg() {
+  const ta  = document.getElementById('chatInput');
+  const msg = ta.value.trim();
+  if (!msg) return;
+  const btn = document.getElementById('sendBtn');
+  ta.value = ''; ta.style.height = 'auto'; btn.disabled = true;
+  appendMsg('user', msg);
+  const tid = addTyping();
+  try {
+    const data = await API.post('/api/chat', {
+      message: msg, session_id: SESSION_ID,
+      mode, subject: document.getElementById('subjectSel').value,
+    });
+    removeTyping(tid);
+    appendMsg('ai', data.response, data.agent_steps);
+    // Update XP
+    sessionXP += data.xp_earned || 0;
+    totalXP    = data.total_xp;
+    level      = data.level;
+    msgCount++;
+    document.getElementById('msgCnt').textContent  = msgCount;
+    document.getElementById('sessionXP').textContent = '+' + sessionXP;
+    document.getElementById('xpLabel').textContent  = '+' + sessionXP + ' XP session';
+    document.getElementById('xpBar').style.width   = ((totalXP % 500)/500*100) + '%';
+    if (data.xp_earned) XPSystem.show(data.xp_earned);
+    showAgentSteps(data.agent_steps);
+    showResources(data.resources);
+    if (data.new_achievements?.length) showAchievements(data.new_achievements);
+  } catch (e) {
+    removeTyping(tid);
+    appendMsg('ai', `⚠️ **Error:** ${e.message}\n\nMake sure your ANTHROPIC_API_KEY is set in .env`);
+    Toast.error(e.message);
+  }
+  btn.disabled = false;
+  document.getElementById('chatInput').focus();
+}
+</script>
+{% endblock %}

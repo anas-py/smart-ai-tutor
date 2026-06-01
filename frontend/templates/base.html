@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Smart AI Tutor{% endblock %}</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<script>(function(){var t=localStorage.getItem('sat_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+{% block head %}{% endblock %}
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <a href="{{ url_for('dashboard') }}" class="sidebar-logo">
+      <div class="logo-gem">🧠</div>
+      <span class="logo-name">Smart AI Tutor</span>
+    </a>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section">Learn</span>
+      <a href="{{ url_for('dashboard') }}"     class="nav-item {% if request.endpoint=='dashboard'     %}active{% endif %}"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a href="{{ url_for('tutor') }}"         class="nav-item {% if request.endpoint=='tutor'         %}active{% endif %}"><span class="nav-icon">🤖</span> AI Tutor AI</a>
+      <a href="{{ url_for('quiz') }}"          class="nav-item {% if request.endpoint=='quiz'          %}active{% endif %}"><span class="nav-icon">📝</span> Smart Quiz</a>
+      <a href="{{ url_for('study_plans') }}"   class="nav-item {% if request.endpoint=='study_plans'   %}active{% endif %}"><span class="nav-icon">🗺️</span> Study Plans</a>
+      <a href="{{ url_for('notes') }}"         class="nav-item {% if request.endpoint=='notes'         %}active{% endif %}"><span class="nav-icon">📓</span> Notes</a>
+      <a href="{{ url_for('pdf_chat_page') }}" class="nav-item {% if request.endpoint=='pdf_chat_page' %}active{% endif %}"><span class="nav-icon">📄</span> PDF Chat <span class="nav-badge">NEW</span></a>
+
+      <span class="nav-section">Progress</span>
+      <a href="{{ url_for('analytics') }}"        class="nav-item {% if request.endpoint=='analytics'        %}active{% endif %}"><span class="nav-icon">📊</span> Analytics</a>
+      <a href="{{ url_for('performance_page') }}"  class="nav-item {% if request.endpoint=='performance_page' %}active{% endif %}"><span class="nav-icon">🎯</span> Predictor <span class="nav-badge">NEW</span></a>
+      <a href="{{ url_for('leaderboard') }}"       class="nav-item {% if request.endpoint=='leaderboard'      %}active{% endif %}"><span class="nav-icon">🏆</span> Leaderboard</a>
+
+      <span class="nav-section">Account</span>
+      <a href="{{ url_for('profile') }}" class="nav-item {% if request.endpoint=='profile' %}active{% endif %}"><span class="nav-icon">👤</span> Profile</a>
+      <a href="{{ url_for('logout') }}"  class="nav-item"><span class="nav-icon">↩</span> Sign Out</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="theme-toggle" data-theme-toggle title="Switch theme">
+        <span class="theme-icon-dark">🌙</span>
+        <span class="theme-icon-light">☀️</span>
+        <div class="theme-toggle-track">
+          <div class="theme-toggle-thumb"></div>
+        </div>
+        <span class="theme-label">Light Mode</span>
+      </button>
+
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('profile') }}" class="user-pill">
+        <div class="u-avatar">🎓</div>
+        <div>
+          <div class="u-name">{{ current_user.display_name or 'Student' }}</div>
+          <div class="u-level">Level {{ current_user.level }} · {{ current_user.xp_points }} XP</div>
+          <div class="xp-strip">
+            <div class="xp-fill" style="width:{{ ((current_user.xp_points % 500) / 500 * 100)|round(1) }}%"></div>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="main-body">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+</div>
+<div id="toast-root"></div>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,342 @@
+{% extends "auth/auth_base.html" %}
+{% block title %}Register — Smart AI Tutor{% endblock %}
+
+{% block content %}
+<div class="auth-card" style="max-width:500px">
+
+  <a href="/" class="auth-logo">
+    <div class="auth-logo-gem">🧠</div>
+    <span class="auth-logo-name">Smart AI Tutor</span>
+  </a>
+
+  <h1 style="font-family:'Clash Display',sans-serif;font-size:26px;font-weight:700;
+              color:var(--txt,#e2e8f0);text-align:center;margin-bottom:6px">
+    Create Your Account
+  </h1>
+  <p style="text-align:center;font-size:14px;color:var(--txt2,#94a3b8);margin-bottom:24px">
+    Set up your free personalized AI tutor in 60 seconds
+  </p>
+
+  <!-- Step dots -->
+  <div style="display:flex;justify-content:center;gap:8px;margin-bottom:28px">
+    <div id="dot-1" style="width:28px;height:6px;border-radius:3px;background:#4f46e5;transition:all .3s"></div>
+    <div id="dot-2" style="width:10px;height:6px;border-radius:3px;background:rgba(79,70,229,.2);transition:all .3s"></div>
+    <div id="dot-3" style="width:10px;height:6px;border-radius:3px;background:rgba(79,70,229,.2);transition:all .3s"></div>
+  </div>
+
+  <!-- Error box -->
+  <div id="error-box" style="display:none;padding:10px 14px;border-radius:10px;margin-bottom:16px;
+       font-size:13px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:#fb7185">
+  </div>
+
+  <!-- Flash messages from Flask -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div style="padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:13px;
+          background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:#fb7185">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- STEP 1 -->
+  <div id="step-1">
+    <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;
+              color:#4f46e5;margin-bottom:16px">Step 1 of 3 — Account Details</p>
+
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--txt2,#94a3b8);margin-bottom:6px">Full Name</label>
+      <input type="text" id="f_name" class="form-input" placeholder="Mohd Anas">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--txt2,#94a3b8);margin-bottom:6px">Email Address</label>
+      <input type="email" id="f_email" class="form-input" placeholder="you@example.com">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--txt2,#94a3b8);margin-bottom:6px">Password</label>
+      <input type="password" id="f_password" class="form-input" placeholder="At least 6 characters">
+    </div>
+    <div style="margin-bottom:4px">
+      <label style="display:block;font-size:13px;font-weight:600;color:var(--txt2,#94a3b8);margin-bottom:6px">Grade / Level</label>
+      <select id="f_grade" class="form-select">
+        <option value="">Select your level</option>
+        <option value="Middle School">Middle School</option>
+        <option value="High School">High School</option>
+        <option value="Undergraduate">Undergraduate</option>
+        <option value="Postgraduate">Postgraduate</option>
+        <option value="Graduate / Masters">Graduate / Masters</option>
+        <option value="Professional">Professional</option>
+      </select>
+    </div>
+
+    <button onclick="goStep(2)" type="button"
+            style="margin-top:20px;width:100%;padding:13px;border-radius:10px;
+                   background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;
+                   font-size:15px;font-weight:700;border:none;cursor:pointer;
+                   box-shadow:0 4px 14px rgba(79,70,229,.4);font-family:inherit">
+      Next → Learning Style
+    </button>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="step-2" style="display:none">
+    <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;
+              color:#4f46e5;margin-bottom:16px">Step 2 of 3 — How Do You Learn Best?</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="scard" data-v="visual" onclick="pickStyle(this)"
+           style="padding:16px;border-radius:12px;border:2px solid #4f46e5;
+                  cursor:pointer;text-align:center;background:rgba(79,70,229,.1)">
+        <div style="font-size:28px;margin-bottom:8px">👁️</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt,#e2e8f0)">Visual</div>
+        <div style="font-size:11px;color:var(--txt2,#94a3b8)">Tables, diagrams</div>
+      </div>
+      <div class="scard" data-v="auditory" onclick="pickStyle(this)"
+           style="padding:16px;border-radius:12px;border:1.5px solid var(--bd,rgba(255,255,255,.1));
+                  cursor:pointer;text-align:center;background:var(--s1,rgba(255,255,255,.03))">
+        <div style="font-size:28px;margin-bottom:8px">🎵</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt,#e2e8f0)">Auditory</div>
+        <div style="font-size:11px;color:var(--txt2,#94a3b8)">Stories, narrative</div>
+      </div>
+      <div class="scard" data-v="kinesthetic" onclick="pickStyle(this)"
+           style="padding:16px;border-radius:12px;border:1.5px solid var(--bd,rgba(255,255,255,.1));
+                  cursor:pointer;text-align:center;background:var(--s1,rgba(255,255,255,.03))">
+        <div style="font-size:28px;margin-bottom:8px">🖐️</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt,#e2e8f0)">Kinesthetic</div>
+        <div style="font-size:11px;color:var(--txt2,#94a3b8)">Hands-on steps</div>
+      </div>
+      <div class="scard" data-v="reading" onclick="pickStyle(this)"
+           style="padding:16px;border-radius:12px;border:1.5px solid var(--bd,rgba(255,255,255,.1));
+                  cursor:pointer;text-align:center;background:var(--s1,rgba(255,255,255,.03))">
+        <div style="font-size:28px;margin-bottom:8px">📖</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt,#e2e8f0)">Reading</div>
+        <div style="font-size:11px;color:var(--txt2,#94a3b8)">Text, definitions</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:22px">
+      <button onclick="goStep(1)" type="button"
+              style="flex:1;padding:12px;border-radius:10px;
+                     border:1.5px solid var(--bd,rgba(255,255,255,.1));
+                     background:transparent;color:var(--txt2,#94a3b8);
+                     font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
+        ← Back
+      </button>
+      <button onclick="goStep(3)" type="button"
+              style="flex:2;padding:12px;border-radius:10px;
+                     background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;
+                     font-size:15px;font-weight:700;border:none;cursor:pointer;
+                     font-family:inherit;box-shadow:0 4px 14px rgba(79,70,229,.4)">
+        Next → Subjects
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="step-3" style="display:none">
+    <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;
+              color:#4f46e5;margin-bottom:16px">Step 3 of 3 — Pick Your Subjects</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      {% for subj, icon in [('Mathematics','📐'),('Physics','⚛️'),('Chemistry','🧪'),('Biology','🧬'),('Computer Science','💻'),('English','📝')] %}
+      <div class="pcard" data-v="{{ subj }}" onclick="toggleSubj(this)"
+           style="padding:12px 16px;border-radius:12px;display:flex;align-items:center;
+                  gap:10px;cursor:pointer;border:1.5px solid var(--bd,rgba(255,255,255,.1));
+                  background:var(--s1,rgba(255,255,255,.03));transition:all .2s">
+        <span style="font-size:20px">{{ icon }}</span>
+        <span style="font-size:13px;font-weight:600;color:var(--txt,#e2e8f0)">{{ subj }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <p style="font-size:12px;color:var(--txt3,#475569);margin-top:10px;text-align:center">
+      Select at least one (can change later)
+    </p>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="goStep(2)" type="button"
+              style="flex:1;padding:12px;border-radius:10px;
+                     border:1.5px solid var(--bd,rgba(255,255,255,.1));
+                     background:transparent;color:var(--txt2,#94a3b8);
+                     font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
+        ← Back
+      </button>
+      <button onclick="doRegister()" type="button"
+              style="flex:2;padding:12px;border-radius:10px;
+                     background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;
+                     font-size:15px;font-weight:700;border:none;cursor:pointer;
+                     font-family:inherit;box-shadow:0 4px 14px rgba(79,70,229,.4)"
+              id="submit-btn">
+        🚀 Create My Account
+      </button>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-size:14px;color:var(--txt2,#94a3b8);margin-top:20px">
+    Already have an account?
+    <a href="{{ url_for('login_page') }}" style="color:#4f46e5;font-weight:600;text-decoration:none">Log in →</a>
+  </p>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var selSubjects = [];
+var selStyle    = 'visual';
+
+function showError(msg) {
+  var box = document.getElementById('error-box');
+  box.textContent = '⚠️ ' + msg;
+  box.style.display = 'block';
+  window.scrollTo(0,0);
+}
+function hideError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+function goStep(n) {
+  hideError();
+  // Validate step 1 before going forward
+  if (n > 1) {
+    var name  = document.getElementById('f_name').value.trim();
+    var email = document.getElementById('f_email').value.trim();
+    var pass  = document.getElementById('f_password').value.trim();
+    var grade = document.getElementById('f_grade').value;
+    if (!name)  { showError('Please enter your full name.'); return; }
+    if (!/^[A-Za-z]+([ '\-][A-Za-z]+)*$/.test(name)) {
+      showError('Name must contain only letters (no numbers or special characters).'); return;
+    }
+    if (name.length < 2) { showError('Name must be at least 2 characters.'); return; }
+    if (!email) { showError('Please enter your email address.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      showError('Please enter a valid email address (e.g. you@example.com).'); return;
+    }
+    if (!pass)  { showError('Please enter a password.'); return; }
+    if (pass.length < 6) { showError('Password must be at least 6 characters.'); return; }
+    if (!grade) { showError('Please select your grade level.'); return; }
+  }
+  document.getElementById('step-1').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('step-2').style.display = n===2 ? 'block' : 'none';
+  document.getElementById('step-3').style.display = n===3 ? 'block' : 'none';
+  for(var i=1;i<=3;i++){
+    var d=document.getElementById('dot-'+i);
+    d.style.width=i===n?'28px':'10px';
+    d.style.background=i<=n?'#4f46e5':'rgba(79,70,229,.2)';
+  }
+}
+
+function pickStyle(el) {
+  selStyle = el.getAttribute('data-v');
+  document.querySelectorAll('.scard').forEach(function(c){
+    var a = c.getAttribute('data-v') === selStyle;
+    c.style.border     = a ? '2px solid #4f46e5' : '1.5px solid var(--bd,rgba(255,255,255,.1))';
+    c.style.background = a ? 'rgba(79,70,229,.1)' : 'var(--s1,rgba(255,255,255,.03))';
+  });
+}
+
+function toggleSubj(el) {
+  var val = el.getAttribute('data-v');
+  var idx = selSubjects.indexOf(val);
+  if (idx === -1) {
+    selSubjects.push(val);
+    el.style.border     = '2px solid #4f46e5';
+    el.style.background = 'rgba(79,70,229,.1)';
+  } else {
+    selSubjects.splice(idx, 1);
+    el.style.border     = '1.5px solid var(--bd,rgba(255,255,255,.1))';
+    el.style.background = 'var(--s1,rgba(255,255,255,.03))';
+  }
+}
+
+async function doRegister() {
+  hideError();
+  var btn = document.getElementById('submit-btn');
+  btn.textContent = 'Creating account...';
+  btn.disabled = true;
+
+  if (selSubjects.length === 0) selSubjects = ['General'];
+
+  var payload = {
+    display_name:   document.getElementById('f_name').value.trim(),
+    email:          document.getElementById('f_email').value.trim(),
+    password:       document.getElementById('f_password').value.trim(),
+    grade_level:    document.getElementById('f_grade').value,
+    learning_style: selStyle,
+    subjects:       JSON.stringify(selSubjects)
+  };
+
+  // ── Try JSON POST first (most common for Flask APIs) ──
+  try {
+    var r = await fetch('/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    // If it redirected us to login/dashboard, follow it
+    if (r.redirected) {
+      window.location.href = r.url;
+      return;
+    }
+
+    var ct = r.headers.get('content-type') || '';
+
+    // If response is HTML (Flask rendered a page), navigate there
+    if (ct.includes('text/html')) {
+      var html = await r.text();
+      // Check if it's a success page (dashboard/login)
+      if (r.url && r.url !== window.location.href) {
+        window.location.href = r.url;
+      } else {
+        document.open(); document.write(html); document.close();
+      }
+      return;
+    }
+
+    // JSON response
+    var data = await r.json();
+    if (data.error) {
+      showError(data.error);
+      btn.textContent = '🚀 Create My Account';
+      btn.disabled = false;
+      return;
+    }
+    if (data.redirect) {
+      window.location.href = data.redirect;
+      return;
+    }
+    // Success — go to dashboard
+    window.location.href = '/dashboard';
+
+  } catch(e) {
+    // ── Fallback: submit as regular form POST ──
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/register';
+    var fields = {
+      display_name:   payload.display_name,
+      email:          payload.email,
+      password:       payload.password,
+      grade_level:    payload.grade_level,
+      learning_style: payload.learning_style,
+      subjects:       payload.subjects
+    };
+    Object.keys(fields).forEach(function(k){
+      var inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = k;
+      inp.value = fields[k];
+      form.appendChild(inp);
+    });
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+// Init
+pickStyle(document.querySelector('.scard[data-v="visual"]'));
+</script>
+{% endblock %}

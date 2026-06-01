@@ -1,0 +1,37 @@
+# NeuroTutor AI — Requirements (Gemini Edition)
+# No pinned versions → pip resolves compatible versions automatically
+
+# ── Web Framework ──────────────────────────────────────────────
+flask
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+flask-socketio
+flask-cors
+flask-jwt-extended
+
+# ── Google Gemini AI ───────────────────────────────────────────
+google-generativeai
+
+# ── LangChain + LangGraph (Agentic AI) ────────────────────────
+langchain
+langchain-google-genai
+langchain-community
+langchain-core
+langgraph
+
+# ── Database ───────────────────────────────────────────────────
+SQLAlchemy
+
+# ── Utilities ──────────────────────────────────────────────────
+python-dotenv
+pydantic
+httpx
+python-jose[cryptography]
+passlib[bcrypt]
+
+# ── Real-time ──────────────────────────────────────────────────
+
+# ── Misc ───────────────────────────────────────────────────────
+Pillow
+cachetools

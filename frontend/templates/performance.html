@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Performance Predictor — AI Tutor{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div class="page-hdr-row">
+    <div>
+      <h1>🎯 Performance Predictor</h1>
+      <p>AI-powered analysis of your strengths, weak areas, and predicted scores</p>
+    </div>
+    <button class="btn btn-primary" onclick="loadPrediction()">🔄 Refresh Analysis</button>
+  </div>
+</div>
+
+<!-- Top Stats Row -->
+<div class="grid cols-4" style="gap:16px;margin-bottom:24px" id="stats-row">
+  <div class="card stat-card"><div class="skeleton" style="width:50px;height:50px;border-radius:14px"></div><div><div class="skeleton" style="width:60px;height:28px;border-radius:4px;margin-bottom:6px"></div><div class="skeleton" style="width:100px;height:14px;border-radius:4px"></div></div></div>
+  <div class="card stat-card"><div class="skeleton" style="width:50px;height:50px;border-radius:14px"></div><div><div class="skeleton" style="width:40px;height:28px;border-radius:4px;margin-bottom:6px"></div><div class="skeleton" style="width:80px;height:14px;border-radius:4px"></div></div></div>
+  <div class="card stat-card"><div class="skeleton" style="width:50px;height:50px;border-radius:14px"></div><div><div class="skeleton" style="width:50px;height:28px;border-radius:4px;margin-bottom:6px"></div><div class="skeleton" style="width:90px;height:14px;border-radius:4px"></div></div></div>
+  <div class="card stat-card"><div class="skeleton" style="width:50px;height:50px;border-radius:14px"></div><div><div class="skeleton" style="width:60px;height:28px;border-radius:4px;margin-bottom:6px"></div><div class="skeleton" style="width:110px;height:14px;border-radius:4px"></div></div></div>
+</div>
+
+<div class="grid cols-2" style="gap:20px;margin-bottom:24px">
+
+  <!-- Subject Performance -->
+  <div class="card" id="subject-card">
+    <h3 style="margin-bottom:16px">📊 Subject Performance</h3>
+    <div class="skeleton" style="height:200px;border-radius:10px"></div>
+  </div>
+
+  <!-- Streak Risk -->
+  <div class="card" id="streak-card">
+    <h3 style="margin-bottom:16px">🔥 Streak & Consistency</h3>
+    <div class="skeleton" style="height:200px;border-radius:10px"></div>
+  </div>
+
+</div>
+
+<div class="grid cols-2" style="gap:20px;margin-bottom:24px">
+
+  <!-- Predicted Scores -->
+  <div class="card" id="predictions-card">
+    <h3 style="margin-bottom:16px">🔮 Predicted Next Scores</h3>
+    <div class="skeleton" style="height:160px;border-radius:10px"></div>
+  </div>
+
+  <!-- Mastery Distribution -->
+  <div class="card" id="mastery-card">
+    <h3 style="margin-bottom:16px">🎓 Mastery Levels</h3>
+    <div class="skeleton" style="height:160px;border-radius:10px"></div>
+  </div>
+
+</div>
+
+<!-- AI Recommendations -->
+<div class="card" id="recommendations-card">
+  <h3 style="margin-bottom:16px">🤖 AI-Generated Recommendations</h3>
+  <div class="skeleton" style="height:140px;border-radius:10px"></div>
+</div>
+
+<style>
+.subject-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.subject-bar-label{font-size:13px;font-weight:600;width:130px;flex-shrink:0;color:var(--txt)}
+.subject-bar-track{flex:1;height:10px;background:var(--ink2);border-radius:5px;overflow:hidden}
+.subject-bar-fill{height:100%;border-radius:5px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)}
+.subject-bar-score{font-size:13px;font-weight:700;width:44px;text-align:right}
+.subject-badge{font-size:10px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:5px;margin-left:6px}
+.mastery-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;margin-bottom:8px;border:1px solid var(--border)}
+.trend-up{color:#34d399}
+.trend-down{color:#fb7185}
+.trend-stable{color:#818cf8}
+.risk-low{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.2);color:#34d399}
+.risk-medium{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.2);color:#fbbf24}
+.risk-high{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.2);color:#fb7185}
+.risk-critical{background:rgba(244,63,94,.15);border-color:rgba(244,63,94,.35);color:#f43f5e}
+.pred-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:rgba(255,255,255,.02)}
+.grade-badge{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;font-family:'Clash Display',sans-serif;font-size:26px;font-weight:700}
+.rec-line{padding:12px 16px;border-radius:10px;border-left:3px solid #4f46e5;background:rgba(79,70,229,.05);margin-bottom:10px;font-size:14px;color:var(--txt2);line-height:1.7}
+</style>
+
+<script>
+async function loadPrediction() {
+  try {
+    const r = await fetch('/api/performance/predict');
+    const d = await r.json();
+    renderAll(d);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function renderAll(d) {
+  renderStats(d);
+  renderSubjects(d);
+  renderStreak(d);
+  renderPredictions(d);
+  renderMastery(d);
+  renderRecommendations(d);
+}
+
+function renderStats(d) {
+  const gradeColors = {A:'#34d399',B:'#818cf8',C:'#fbbf24',D:'#fb923c',F:'#f43f5e'};
+  const gc = gradeColors[d.performance_grade] || '#818cf8';
+  document.getElementById('stats-row').innerHTML = `
+    <div class="card stat-card">
+      <div class="stat-icon" style="background:rgba(79,70,229,.15)">📊</div>
+      <div><div class="stat-val">${d.overall_avg.toFixed(1)}%</div><div class="stat-lbl">Overall Average</div></div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon" style="background:rgba(245,158,11,.12)">📝</div>
+      <div><div class="stat-val">${d.total_quizzes}</div><div class="stat-lbl">Total Quizzes</div></div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon" style="background:rgba(16,185,129,.12)">📅</div>
+      <div><div class="stat-val">${d.active_days_last_30}</div><div class="stat-lbl">Active Days (30d)</div></div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon" style="background:rgba(${gc==='#34d399'?'16,185,129':gc==='#818cf8'?'79,70,229':'245,158,11'},.12)">🎓</div>
+      <div><div class="stat-val" style="color:${gc}">${d.performance_grade}</div><div class="stat-lbl">Performance Grade</div></div>
+    </div>`;
+}
+
+function renderSubjects(d) {
+  const subjects = d.subject_scores || {};
+  const keys = Object.keys(subjects);
+  if (!keys.length) {
+    document.getElementById('subject-card').innerHTML = `<h3 style="margin-bottom:16px">📊 Subject Performance</h3><div style="text-align:center;padding:40px;color:var(--txt2)">No quiz data yet.<br>Take some quizzes to see your breakdown.</div>`;
+    return;
+  }
+  const masteryColors = {expert:'#34d399',proficient:'#818cf8',developing:'#fbbf24',needs_work:'#fb7185'};
+  const trendIcon = {improving:'↑',declining:'↓',stable:'→',new:'★'};
+  const trendClass = {improving:'trend-up',declining:'trend-down',stable:'trend-stable',new:'trend-stable'};
+
+  const bars = keys.map(subj => {
+    const s = subjects[subj];
+    const clr = masteryColors[s.mastery] || '#818cf8';
+    const fill = s.avg_score;
+    return `<div class="subject-bar-row">
+      <span class="subject-bar-label">${subj}</span>
+      <div class="subject-bar-track"><div class="subject-bar-fill" style="width:${fill}%;background:${clr}"></div></div>
+      <span class="subject-bar-score" style="color:${clr}">${fill}%</span>
+      <span class="${trendClass[s.trend]}" style="font-size:13px;font-weight:700">${trendIcon[s.trend]}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('subject-card').innerHTML = `<h3 style="margin-bottom:16px">📊 Subject Performance</h3>${bars}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      ${Object.entries(masteryColors).map(([m,c])=>`<span style="font-size:11px;color:${c};font-weight:700">● ${m.replace('_',' ')}</span>`).join('')}
+      <span style="font-size:11px;color:var(--txt3);margin-left:auto">↑ improving  → stable  ↓ declining</span>
+    </div>`;
+}
+
+function renderStreak(d) {
+  const risk = d.streak_risk || {};
+  const riskClass = `risk-${risk.risk || 'low'}`;
+  const riskEmoji = {low:'🟢',medium:'🟡',high:'🟠',critical:'🔴',unknown:'⚪'}[risk.risk] || '⚪';
+  const weakHtml = d.weak_subjects?.length
+    ? d.weak_subjects.map(s=>`<span class="badge badge-rose" style="margin:3px">${s}</span>`).join('')
+    : '<span class="badge badge-emerald">None — great work!</span>';
+  const strongHtml = d.strong_subjects?.length
+    ? d.strong_subjects.map(s=>`<span class="badge badge-indigo" style="margin:3px">${s}</span>`).join('')
+    : '<span style="color:var(--txt3);font-size:13px">None yet — keep quizzing!</span>';
+
+  document.getElementById('streak-card').innerHTML = `
+    <h3 style="margin-bottom:16px">🔥 Streak & Consistency</h3>
+    <div class="mastery-item ${riskClass}" style="margin-bottom:16px">
+      <span style="font-size:20px">${riskEmoji}</span>
+      <span style="flex:1;margin-left:12px;font-size:14px;font-weight:600">${risk.message || 'Keep studying!'}</span>
+      <span class="badge" style="background:rgba(255,255,255,.1);color:inherit">${risk.days_inactive || 0}d inactive</span>
+    </div>
+    <div style="margin-bottom:12px">
+      <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--txt3);margin-bottom:8px">Weak Areas</p>
+      <div>${weakHtml}</div>
+    </div>
+    <div>
+      <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--txt3);margin-bottom:8px">Strong Subjects</p>
+      <div>${strongHtml}</div>
+    </div>`;
+}
+
+function renderPredictions(d) {
+  const preds = d.predicted_scores || {};
+  const keys = Object.keys(preds);
+  if (!keys.length) {
+    document.getElementById('predictions-card').innerHTML = `<h3 style="margin-bottom:16px">🔮 Predicted Next Scores</h3><div style="text-align:center;padding:30px;color:var(--txt2)">Need at least 2 quizzes per subject to predict scores.</div>`;
+    return;
+  }
+  const rows = keys.map(subj => {
+    const score = preds[subj];
+    const clr = score >= 75 ? '#34d399' : score >= 55 ? '#fbbf24' : '#fb7185';
+    return `<div class="pred-row">
+      <span style="font-size:14px;font-weight:600">${subj}</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:80px;height:6px;background:var(--ink2);border-radius:3px;overflow:hidden">
+          <div style="width:${score}%;height:100%;background:${clr};border-radius:3px"></div>
+        </div>
+        <span style="font-size:15px;font-weight:700;color:${clr};width:44px;text-align:right">${score}%</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('predictions-card').innerHTML = `<h3 style="margin-bottom:16px">🔮 Predicted Next Scores</h3>
+    <p style="font-size:12px;color:var(--txt3);margin-bottom:12px">Linear regression on your quiz history</p>${rows}`;
+}
+
+function renderMastery(d) {
+  const dist = d.mastery_distribution || {};
+  const masteryConfig = [
+    {key:'expert',      label:'Expert',     emoji:'🌟', color:'#34d399'},
+    {key:'proficient',  label:'Proficient', emoji:'✅', color:'#818cf8'},
+    {key:'developing',  label:'Developing', emoji:'📈', color:'#fbbf24'},
+    {key:'needs_work',  label:'Needs Work', emoji:'⚠️', color:'#fb7185'},
+  ];
+  const items = masteryConfig.map(m => {
+    const count = dist[m.key] || 0;
+    return `<div class="mastery-item">
+      <span style="font-size:20px">${m.emoji}</span>
+      <span style="flex:1;margin-left:12px;font-size:14px;font-weight:600;color:${m.color}">${m.label}</span>
+      <span style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:${m.color}">${count}</span>
+      <span style="font-size:12px;color:var(--txt3);margin-left:4px">subject${count!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('mastery-card').innerHTML = `<h3 style="margin-bottom:16px">🎓 Mastery Levels</h3>${items}`;
+}
+
+function renderRecommendations(d) {
+  const recs = d.ai_recommendations || 'No recommendations yet — take more quizzes!';
+  const lines = recs.split('\n').filter(l => l.trim());
+  const formatted = lines.map(l => {
+    const clean = l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
+    return `<div class="rec-line">${clean}</div>`;
+  }).join('');
+  document.getElementById('recommendations-card').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <h3>🤖 AI-Generated Recommendations</h3>
+      <span class="badge badge-indigo">Powered by Gemini</span>
+    </div>
+    ${formatted}`;
+}
+
+loadPrediction();
+</script>
+{% endblock %}
